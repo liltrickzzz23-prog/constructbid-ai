@@ -1,19 +1,20 @@
 """
 Database models and setup for ConstructBid AI.
-Uses SQLAlchemy with PostgreSQL.
+Uses SQLAlchemy with PostgreSQL (psycopg3 driver).
 """
 
 import os
-from sqlalchemy import create_engine
-import psycopg, Column, String, Float, Integer, Boolean, Text, DateTime, JSON
+from sqlalchemy import create_engine, Column, String, Float, Integer, Boolean, Text, DateTime, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Fix Railway's postgres:// → postgresql://
+# Fix Railway's postgres:// to work with psycopg3
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
+elif DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg://", 1)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True) if DATABASE_URL else None
 SessionLocal = sessionmaker(bind=engine) if engine else None
@@ -75,7 +76,6 @@ class Project(Base):
 
 
 def init_db():
-    """Create all tables and seed default data if empty."""
     if not engine:
         print("[DB] No DATABASE_URL set — database not initialized")
         return
@@ -85,7 +85,6 @@ def init_db():
 
     session = SessionLocal()
     try:
-        # Seed default company if none exists
         if session.query(Company).count() == 0:
             default_company = Company(
                 id="default",
@@ -101,7 +100,6 @@ def init_db():
             session.commit()
             print("[DB] Default company created")
 
-        # Seed sample projects if none exist
         if session.query(Project).count() == 0:
             samples = [
                 Project(id="proj-1", company_id="default",
@@ -121,7 +119,6 @@ def init_db():
 
 
 def get_db():
-    """Get a database session."""
     session = SessionLocal()
     try:
         yield session
