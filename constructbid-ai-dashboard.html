@@ -166,7 +166,7 @@ a{color:var(--accent)}
 </main>
 
 <script>
-const API = 'http://127.0.0.1:8000', CID = 'default';
+const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : window.location.origin, CID = 'default';
 let opps = [], company = {}, currentOpp = null;
 
 async function api(path, opts = {}) {

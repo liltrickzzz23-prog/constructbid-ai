@@ -4,7 +4,8 @@ Uses SQLAlchemy with PostgreSQL.
 """
 
 import os
-from sqlalchemy import create_engine, Column, String, Float, Integer, Boolean, Text, DateTime, JSON
+from sqlalchemy import create_engine
+import psycopg, Column, String, Float, Integer, Boolean, Text, DateTime, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime
 
@@ -12,7 +13,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 # Fix Railway's postgres:// → postgresql://
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg://", 1)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True) if DATABASE_URL else None
 SessionLocal = sessionmaker(bind=engine) if engine else None
