@@ -5,6 +5,7 @@ FastAPI backend with PostgreSQL, SAM.gov, auto-refresh, notifications, voice AI.
 
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
 import json, os, uuid, httpx, asyncio, re, base64
@@ -407,6 +408,17 @@ def generate_proposal(section, opp, company, past):
 @app.get("/")
 def root():
     return {"app": "ConstructBid AI", "version": "4.0.0", "status": "running", "auto_refresh": auto_refresh_status}
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    html_path = os.path.join(os.path.dirname(__file__), "..", "..", "constructbid-ai-dashboard.html")
+    if not os.path.exists(html_path):
+        # Try alternate path for Railway
+        html_path = os.path.join(os.path.dirname(__file__), "..", "constructbid-ai-dashboard.html")
+    if not os.path.exists(html_path):
+        return HTMLResponse("<h1>Dashboard not found. Upload constructbid-ai-dashboard.html</h1>", status_code=404)
+    with open(html_path) as f:
+        return HTMLResponse(f.read())
 
 @app.get("/api/company/{company_id}")
 def get_company(company_id: str):
