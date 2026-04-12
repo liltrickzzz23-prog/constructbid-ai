@@ -1,685 +1,562 @@
 """
-ConstructBid AI — Government Contractor OS v6
-Multi-company SaaS with auth, PostgreSQL, SAM.gov, notifications, voice AI, Stripe billing.
+ConstructBid AI — Government Contractor OS v7
+Full SaaS: auth, PostgreSQL, SAM.gov, notifications, voice AI, Stripe, tracking, analytics, themes.
 """
-
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional
-import json, os, uuid, httpx, asyncio, re, base64, bcrypt, jwt, stripe
-from datetime import datetime, date, timedelta
+import json,os,uuid,httpx,asyncio,re,base64,bcrypt,jwt,stripe
+from datetime import datetime,date,timedelta
 from contextlib import asynccontextmanager
+from app.database import init_db,SessionLocal,User,Company,Opportunity,Project
 
-from app.database import init_db, SessionLocal, User, Company, Opportunity, Project
+JWT_SECRET=os.environ.get("JWT_SECRET","constructbid-secret")
+STRIPE_SECRET=os.environ.get("STRIPE_SECRET_KEY","")
+STRIPE_PRICE_ID=os.environ.get("STRIPE_PRICE_ID","")
+STRIPE_WEBHOOK_SECRET=os.environ.get("STRIPE_WEBHOOK_SECRET","")
+TRIAL_DAYS=14
+stripe.api_key=STRIPE_SECRET
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "constructbid-ai-secret-change-me")
-STRIPE_SECRET = os.environ.get("STRIPE_SECRET_KEY", "")
-STRIPE_PRICE_ID = os.environ.get("STRIPE_PRICE_ID", "")
-STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-TRIAL_DAYS = 14
+def c2d(c):
+    return {"id":c.id,"name":c.name,"services":c.services or[],"certifications":c.certifications or[],
+    "naics":c.naics or[],"bonding_capacity":c.bonding_capacity or 0,"regions":c.regions or[],
+    "sam_api_key":c.sam_api_key or"","notify_email":c.notify_email or"","notify_phone":c.notify_phone or"",
+    "notify_enabled":c.notify_enabled or False,"notify_min_score":c.notify_min_score or 75,
+    "plan_status":c.plan_status or"trial","stripe_customer_id":c.stripe_customer_id or"",
+    "stripe_subscription_id":c.stripe_subscription_id or"","theme":c.theme or"dark-blue",
+    "trial_ends_at":c.trial_ends_at.isoformat() if c.trial_ends_at else None}
 
-stripe.api_key = STRIPE_SECRET
+def o2d(o):
+    return {"id":o.id,"company_id":o.company_id,"title":o.title or"","agency":o.agency or"",
+    "naics":o.naics or"","location":o.location or"","due_date":o.due_date or"","value":o.value or 0,
+    "set_aside":o.set_aside or"","scope":o.scope or"","status":o.status or"new","source":o.source or"manual",
+    "notes":o.notes or"","outcome":o.outcome or"","outcome_value":o.outcome_value or 0,
+    "sam_notice_id":o.sam_notice_id,"sam_sol_number":o.sam_sol_number or"",
+    "sam_posted_date":o.sam_posted_date or"","sam_type":o.sam_type or"","sam_link":o.sam_link or""}
 
-def company_to_dict(c):
-    return {"id":c.id,"name":c.name,"services":c.services or [],"certifications":c.certifications or [],
-            "naics":c.naics or [],"bonding_capacity":c.bonding_capacity or 0,"regions":c.regions or [],
-            "sam_api_key":c.sam_api_key or "","notify_email":c.notify_email or "",
-            "notify_phone":c.notify_phone or "","notify_enabled":c.notify_enabled or False,
-            "notify_min_score":c.notify_min_score or 75,
-            "plan_status":c.plan_status or "trial",
-            "stripe_customer_id":c.stripe_customer_id or "",
-            "stripe_subscription_id":c.stripe_subscription_id or "",
-            "trial_ends_at":c.trial_ends_at.isoformat() if c.trial_ends_at else None}
+def p2d(p):
+    return {"id":p.id,"company_id":p.company_id,"name":p.name or"","client":p.client or"",
+    "value":p.value or 0,"year":p.year or 0,"scope":p.scope or""}
 
-def opp_to_dict(o):
-    return {"id":o.id,"company_id":o.company_id,"title":o.title or "","agency":o.agency or "",
-            "naics":o.naics or "","location":o.location or "","due_date":o.due_date or "",
-            "value":o.value or 0,"set_aside":o.set_aside or "","scope":o.scope or "",
-            "status":o.status or "new","source":o.source or "manual","sam_notice_id":o.sam_notice_id,
-            "sam_sol_number":o.sam_sol_number or "","sam_posted_date":o.sam_posted_date or "",
-            "sam_type":o.sam_type or "","sam_link":o.sam_link or ""}
+def env(n):
+    v=os.environ.get(n,"")
+    if v:return v
+    ep=os.path.join(os.path.dirname(__file__),"..",".env")
+    if os.path.exists(ep):
+        with open(ep) as f:
+            for l in f:
+                if l.strip().startswith(f"{n}="):return l.strip().split("=",1)[1].strip().strip('"').strip("'")
+    return""
 
-def proj_to_dict(p):
-    return {"id":p.id,"company_id":p.company_id,"name":p.name or "","client":p.client or "",
-            "value":p.value or 0,"year":p.year or 0,"scope":p.scope or ""}
+def hp(p):return bcrypt.hashpw(p.encode(),bcrypt.gensalt()).decode()
+def vp(p,h):return bcrypt.checkpw(p.encode(),h.encode())
+def ct(u,c):return jwt.encode({"user_id":u,"company_id":c,"exp":datetime.utcnow()+timedelta(days=30)},JWT_SECRET,algorithm="HS256")
+def gu(r):
+    a=r.headers.get("Authorization","")
+    if not a.startswith("Bearer "):raise HTTPException(401,"Not logged in")
+    try:p=jwt.decode(a[7:],JWT_SECRET,algorithms=["HS256"]);return{"user_id":p["user_id"],"company_id":p["company_id"]}
+    except jwt.ExpiredSignatureError:raise HTTPException(401,"Session expired")
+    except:raise HTTPException(401,"Invalid token")
 
-def load_env_var(name):
-    val = os.environ.get(name, "")
-    if val: return val
-    env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                if line.strip().startswith(f"{name}="): return line.strip().split("=",1)[1].strip().strip('"').strip("'")
-    return ""
+def check_sub(c):
+    s=c.plan_status or"trial"
+    if s=="active":return True
+    if s=="trial" and c.trial_ends_at:return datetime.utcnow()<c.trial_ends_at
+    if s=="trial":return True
+    return False
 
-# ── Auth ──
-def hash_password(p): return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
-def verify_password(p, h): return bcrypt.checkpw(p.encode(), h.encode())
-def create_token(uid, cid): return jwt.encode({"user_id":uid,"company_id":cid,"exp":datetime.utcnow()+timedelta(days=30)}, JWT_SECRET, algorithm="HS256")
+def plan_info(c):
+    if not c:return{"plan_status":"trial"}
+    s=c.plan_status or"trial";i={"plan_status":s}
+    if s=="trial" and c.trial_ends_at:
+        dl=(c.trial_ends_at-datetime.utcnow()).days
+        i["trial_days_left"]=max(0,dl)
+        if dl<0:i["plan_status"]="expired"
+    elif s=="active":i["trial_days_left"]=None
+    return i
 
-def get_current_user(request):
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "): raise HTTPException(401, "Not logged in")
-    try:
-        p = jwt.decode(auth[7:], JWT_SECRET, algorithms=["HS256"])
-        return {"user_id":p["user_id"],"company_id":p["company_id"]}
-    except jwt.ExpiredSignatureError: raise HTTPException(401, "Session expired")
-    except: raise HTTPException(401, "Invalid token")
-
-def check_subscription(company):
-    """Check if company has active subscription or is in trial."""
-    status = company.plan_status or "trial"
-    if status == "active": return True
-    if status == "trial":
-        if company.trial_ends_at:
-            if datetime.utcnow() < company.trial_ends_at: return True
-            # Trial expired
-            company.plan_status = "expired"
-            return False
-        return True  # No trial end set = unlimited trial for now
-    return False  # cancelled, expired
-
-
-# ── Notifications ──
-async def send_notifications(company, new_pursue_opps):
-    if not company.get("notify_enabled") or not new_pursue_opps: return
-    email=company.get("notify_email","");phone=company.get("notify_phone","")
-    comp_name=company.get("name","Your Company");count=len(new_pursue_opps)
-    subject=f"🔥 {count} New Opportunit{'ies' if count>1 else 'y'} — ConstructBid AI"
-    text_lines=[f"ConstructBid AI found {count} new opportunit{'ies' if count>1 else 'y'} for {comp_name}:\n"]
-    for opp in new_pursue_opps[:5]:
-        val=opp.get('value',0);text_lines.append(f"• [{opp.get('score',0)} pts] {opp.get('title','')}")
-        text_lines.append(f"  Value: {'${:.1f}M'.format(val/1e6) if val else 'TBD'} | Due: {opp.get('due_date','TBD')}")
-    plain_text="\n".join(text_lines)
-    html_rows=""
-    for opp in new_pursue_opps[:5]:
-        color="#22c55e" if opp.get("recommendation")=="PURSUE" else "#f59e0b"
-        val=opp.get("value",0);val_str=f"${val/1e6:.1f}M" if val else "TBD"
-        html_rows+=f'<tr style="border-bottom:1px solid #1e2d3d"><td style="padding:12px;text-align:center"><span style="display:inline-block;width:44px;height:44px;border-radius:50%;border:3px solid {color};line-height:38px;text-align:center;font-weight:700;color:{color}">{opp.get("score",0)}</span></td><td style="padding:12px"><strong style="color:#e2e8f0">{opp.get("title","")}</strong><br><span style="color:#64748b;font-size:12px">{opp.get("agency","")} · {val_str} · Due {opp.get("due_date","TBD")}</span></td></tr>'
-    html_body=f'<div style="background:#0a0f1a;padding:20px;font-family:Arial"><div style="max-width:600px;margin:0 auto;background:#111827;border-radius:12px;border:1px solid #1e2d3d"><div style="background:linear-gradient(135deg,#059669,#06b6d4);padding:20px;text-align:center"><h1 style="color:white;margin:0;font-size:20px">🔥 {count} New Opportunities</h1><p style="color:rgba(255,255,255,.8);margin:8px 0 0">{comp_name}</p></div><table style="width:100%;border-collapse:collapse">{html_rows}</table></div></div>'
-    if email:
-        rk=load_env_var("RESEND_API_KEY")
+# Notifications
+async def notify(company,opps):
+    if not company.get("notify_enabled") or not opps:return
+    em=company.get("notify_email","");cn=company.get("name","");ct=len(opps)
+    subj=f"🔥 {ct} New Opportunit{'ies' if ct>1 else 'y'} — ConstructBid AI"
+    txt="\n".join([f"• [{o.get('score',0)}pts] {o.get('title','')}" for o in opps[:5]])
+    html=''.join([f'<tr><td style="padding:8px"><strong>{o.get("title","")}</strong><br><span style="color:#888">{o.get("agency","")}</span></td></tr>' for o in opps[:5]])
+    html=f'<div style="background:#111;padding:20px;font-family:Arial"><h2 style="color:#22d3ee">🔥 {ct} New Opportunities for {cn}</h2><table>{html}</table></div>'
+    if em:
+        rk=env("RESEND_API_KEY")
         if rk:
             try:
                 async with httpx.AsyncClient(timeout=15) as c:
-                    await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[email],"subject":subject,"html":html_body,"text":plain_text})
-            except Exception as e: print(f"[NOTIFY] Email error: {e}")
-    if phone:
-        sid=load_env_var("TWILIO_ACCOUNT_SID");tok=load_env_var("TWILIO_AUTH_TOKEN");frm=load_env_var("TWILIO_FROM_NUMBER")
-        if sid and tok and frm:
-            sms=f"ConstructBid AI: {count} new opportunit{'ies' if count>1 else 'y'}! Top: {new_pursue_opps[0].get('title','')[:60]} ({new_pursue_opps[0].get('score',0)} pts)"
-            try:
-                auth=base64.b64encode(f"{sid}:{tok}".encode()).decode()
-                async with httpx.AsyncClient(timeout=15) as c:
-                    await c.post(f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",headers={"Authorization":f"Basic {auth}"},data={"To":phone,"From":frm,"Body":sms})
-            except Exception as e: print(f"[NOTIFY] SMS error: {e}")
+                    await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":subj,"html":html,"text":txt})
+            except:pass
 
-
-# ── Scoring ──
-SCOPE_KW=["cemetery","columbarium","gravesite","burial","headstone","niche","memorial","interment","construction","renovation","remodel","expansion","demolition","design-build","design build","facilities","maintenance","grounds","landscaping","mowing","irrigation","hvac","plumbing","mechanical","electrical","roofing","painting","concrete","masonry","site prep","excavation","grading","paving","drainage","fencing","restoration","historic","rehabilitation","lease","leasing","repair","replace","install","upgrade","improve"]
-
-def score_opportunity(opp,company):
-    score=0;reasons=[];flags=[]
-    cn=company.get("naics",[]);cc=[c.upper() for c in company.get("certifications",[])];cr=company.get("regions",[])
-    cs=[s.lower() for s in company.get("services",[])];cb=company.get("bonding_capacity",0)
-    on=opp.get("naics","") or "";osa=opp.get("set_aside","") or "";ol=opp.get("location","") or ""
-    ov=opp.get("value",0) or 0;od=opp.get("due_date","") or ""
-    ot=((opp.get("title","") or "")+" "+(opp.get("scope","") or "")).lower()
-    if on in cn: score+=35;reasons.append(f"✓ NAICS {on} — exact match")
-    elif on[:4] and any(n[:4]==on[:4] for n in cn): score+=25;reasons.append(f"◐ NAICS {on} — related")
-    elif on[:3] and any(n[:3]==on[:3] for n in cn): score+=15;reasons.append(f"○ NAICS {on} — same group")
-    else: reasons.append(f"✗ NAICS {on} — outside capabilities")
-    sa=osa.upper().strip();hsd=any("SDVOSB" in c for c in cc)
-    if not sa or sa in("FULL & OPEN","FULL AND OPEN","NONE","N/A"): score+=15;reasons.append("○ Full & open")
+# Scoring
+SK=["cemetery","columbarium","gravesite","burial","headstone","memorial","interment","construction","renovation","remodel","expansion","demolition","design-build","design build","facilities","maintenance","grounds","landscaping","mowing","irrigation","hvac","plumbing","mechanical","electrical","roofing","painting","concrete","masonry","site prep","excavation","grading","paving","drainage","fencing","restoration","historic","rehabilitation","lease","leasing","repair","replace","install","upgrade","improve"]
+def score(o,c):
+    s=0;re=[];fl=[]
+    cn=c.get("naics",[]);cc=[x.upper() for x in c.get("certifications",[])];cr=c.get("regions",[])
+    cs=[x.lower() for x in c.get("services",[])];cb=c.get("bonding_capacity",0)
+    on=o.get("naics","")or"";osa=o.get("set_aside","")or"";ol=o.get("location","")or""
+    ov=o.get("value",0)or 0;od=o.get("due_date","")or""
+    ot=((o.get("title","")or"")+" "+(o.get("scope","")or"")).lower()
+    if on in cn:s+=35;re.append(f"✓ NAICS {on} — exact match")
+    elif on[:4] and any(n[:4]==on[:4] for n in cn):s+=25;re.append(f"◐ NAICS {on} — related")
+    elif on[:3] and any(n[:3]==on[:3] for n in cn):s+=15;re.append(f"○ NAICS {on} — same group")
+    else:re.append(f"✗ NAICS {on} — outside capabilities")
+    sa=osa.upper().strip();hsd=any("SDVOSB" in x for x in cc)
+    if not sa or sa in("FULL & OPEN","FULL AND OPEN","NONE","N/A"):s+=15;re.append("○ Full & open")
     elif "SDVOSB" in sa:
-        if hsd: score+=25;reasons.append("✓ SDVOSB matches")
-        else: reasons.append("✗ SDVOSB required");flags.append("disq")
-    elif "SMALL" in sa or "SBA" in sa: score+=20;reasons.append("✓ Small business")
+        if hsd:s+=25;re.append("✓ SDVOSB matches")
+        else:re.append("✗ SDVOSB required");fl.append("disq")
+    elif "SMALL" in sa or "SBA" in sa:s+=20;re.append("✓ Small business")
     elif "8(A)" in sa or "8A" in sa:
-        if any("8(A)" in c or "8A" in c for c in cc): score+=25
-        else: reasons.append("✗ 8(a) required");flags.append("disq")
+        if any("8(A)" in x or "8A" in x for x in cc):s+=25
+        else:fl.append("disq")
     elif "HUBZONE" in sa:
-        if any("HUBZONE" in c for c in cc): score+=25
-        else: reasons.append("✗ HUBZone required");flags.append("disq")
+        if any("HUBZONE" in x for x in cc):s+=25
+        else:fl.append("disq")
     elif "VOSB" in sa:
-        if hsd: score+=25;reasons.append("✓ VOSB — SDVOSB qualifies")
-        else: flags.append("disq")
-    else: score+=10;reasons.append(f"? Set-aside '{osa}'")
-    dk={w.lower() for s in cs for w in s.split() if len(w)>3}
-    ak=set(SCOPE_KW)|dk;mk=[k for k in ak if k in ot]
+        if hsd:s+=25
+        else:fl.append("disq")
+    else:s+=10
+    dk={w.lower() for sv in cs for w in sv.split() if len(w)>3}
+    ak=set(SK)|dk;mk=[k for k in ak if k in ot]
     hs=[k for k in["cemetery","columbarium","gravesite","burial","memorial"] if k in ot]
-    if hs: kw=min(20,12+len(mk)*2);reasons.append(f"✓ Strong: {', '.join(hs[:3])}")
-    elif len(mk)>=4: kw=min(20,len(mk)*3);reasons.append(f"✓ Good: {', '.join(list(mk)[:5])}")
-    elif len(mk)>=2: kw=min(14,len(mk)*4);reasons.append(f"◐ Partial: {', '.join(list(mk)[:4])}")
-    elif len(mk)==1: kw=5;reasons.append(f"○ Weak: {mk[0]}")
-    elif on in cn: kw=8;reasons.append("○ No scope — NAICS relevant")
-    else: kw=0;reasons.append("✗ No keywords match")
-    score+=kw
-    adj={"VA":["MD","DC","WV","NC","TN"],"MD":["VA","DC","WV","PA"],"DC":["VA","MD"],"OH":["MI","IN","KY","WV","PA"],"MI":["OH","IN","WI"],"IN":["MI","OH","IL","KY"],"OK":["TX","KS","AR"],"NE":["KS","SD","IA","CO","WY"],"CA":["OR","NV","AZ"],"TN":["VA","NC","GA","AL","KY"]}
-    if not ol: score+=6
-    elif ol in cr: score+=10;reasons.append(f"✓ In {ol}")
-    elif any(ol in adj.get(r,[]) for r in cr): score+=5;reasons.append(f"◐ {ol} — adjacent")
-    else: score+=1;reasons.append(f"△ {ol} — outside")
-    if ov<=0: score+=4
-    elif ov<=cb*.5: score+=5
-    elif ov<=cb: score+=4
-    elif ov<=cb*1.5: score+=2
-    else: reasons.append(f"✗ ${ov/1e6:.1f}M exceeds bonding")
+    if hs:kw=min(20,12+len(mk)*2);re.append(f"✓ Strong: {', '.join(hs[:3])}")
+    elif len(mk)>=4:kw=min(20,len(mk)*3);re.append(f"✓ Good: {', '.join(list(mk)[:5])}")
+    elif len(mk)>=2:kw=min(14,len(mk)*4);re.append(f"◐ Partial: {', '.join(list(mk)[:4])}")
+    elif len(mk)==1:kw=5;re.append(f"○ Weak: {mk[0]}")
+    elif on in cn:kw=8;re.append("○ NAICS relevant")
+    else:kw=0;re.append("✗ No keywords match")
+    s+=kw
+    adj={"VA":["MD","DC","WV","NC","TN"],"MD":["VA","DC","WV","PA"],"DC":["VA","MD"],"OH":["MI","IN","KY","WV","PA"],"MI":["OH","IN","WI"],"IN":["MI","OH","IL","KY"],"OK":["TX","KS","AR"],"CA":["OR","NV","AZ"],"TN":["VA","NC","GA","AL","KY"]}
+    if not ol:s+=6
+    elif ol in cr:s+=10;re.append(f"✓ In {ol}")
+    elif any(ol in adj.get(r,[]) for r in cr):s+=5;re.append(f"◐ {ol} adjacent")
+    else:s+=1;re.append(f"△ {ol} outside")
+    if ov<=0:s+=4
+    elif ov<=cb*.5:s+=5
+    elif ov<=cb:s+=4
+    elif ov<=cb*1.5:s+=2
+    else:re.append(f"✗ ${ov/1e6:.1f}M exceeds bonding")
     try:
         if od:
             dl=(datetime.strptime(od,"%Y-%m-%d").date()-date.today()).days
-            if dl<0: flags.append("expired")
-            elif dl>30: score+=5
-            elif dl>14: score+=3
-            elif dl>3: score+=1
-        else: score+=3
-    except: score+=3
-    score=min(100,score)
-    if "disq" in flags: score=min(score,35);reasons.insert(0,"⚠ DISQUALIFIED")
-    if "expired" in flags: score=min(score,25);reasons.insert(0,"⚠ EXPIRED")
-    rec="PASS" if("disq" in flags or "expired" in flags) else "PURSUE" if score>=75 else "REVIEW" if score>=55 else "PASS"
-    return {"score":score,"recommendation":rec,"reasons":reasons}
+            if dl<0:fl.append("expired")
+            elif dl>30:s+=5
+            elif dl>14:s+=3
+            elif dl>3:s+=1
+        else:s+=3
+    except:s+=3
+    s=min(100,s)
+    if "disq" in fl:s=min(s,35);re.insert(0,"⚠ DISQUALIFIED")
+    if "expired" in fl:s=min(s,25);re.insert(0,"⚠ EXPIRED")
+    rc="PASS" if("disq" in fl or "expired" in fl) else "PURSUE" if s>=75 else "REVIEW" if s>=55 else "PASS"
+    return{"score":s,"recommendation":rc,"reasons":re}
 
-
-# ── SAM.gov ──
+# SAM
 SAM_URL="https://api.sam.gov/prod/opportunities/v2/search"
 SA_MAP={"SBA":"Small Business","SBP":"Small Business","8A":"8(a)","8AN":"8(a)","HZC":"HUBZone","HZS":"HUBZone","SDVOSBC":"SDVOSB","SDVOSBS":"SDVOSB","VOSBC":"VOSB","VOSBS":"VOSB","":"Full & Open",None:"Full & Open"}
-
 async def fetch_sam(company,days=30):
     ak=company.get("sam_api_key","")
-    if not ak: return []
+    if not ak:return[]
     pf=(date.today()-timedelta(days=days)).strftime("%m/%d/%Y");pt=date.today().strftime("%m/%d/%Y")
-    nc=company.get("naics",[]);pp=["8122","2362","5617","2382","5612","2379","2389","2361"]
+    nc=company.get("naics",[]);pp=["8122","2362","5617","2382","5612","2379","2389"]
     pri=[n for n in nc if any(n.startswith(p) for p in pp)];oth=[n for n in nc if n not in pri]
     codes=(pri+oth)[:8];opps=[]
-    session=SessionLocal()
-    try: eids={o.sam_notice_id for o in session.query(Opportunity.sam_notice_id).filter(Opportunity.sam_notice_id.isnot(None),Opportunity.company_id==company["id"]).all()}
-    finally: session.close()
+    se=SessionLocal()
+    try:eids={o.sam_notice_id for o in se.query(Opportunity.sam_notice_id).filter(Opportunity.sam_notice_id.isnot(None),Opportunity.company_id==company["id"]).all()}
+    finally:se.close()
     calls=0
     async with httpx.AsyncClient(timeout=30) as cl:
         for naics in codes:
             try:
-                if calls>0: await asyncio.sleep(1.5)
+                if calls>0:await asyncio.sleep(1.5)
                 r=await cl.get(SAM_URL,params={"api_key":ak,"limit":100,"offset":0,"postedFrom":pf,"postedTo":pt,"ncode":naics,"ptype":"p,o,k"})
                 calls+=1
-                if r.status_code==429: break
-                if r.status_code!=200: continue
+                if r.status_code==429:break
+                if r.status_code!=200:continue
                 for s in r.json().get("opportunitiesData",[]):
                     nid=s.get("noticeId","")
-                    if nid in eids: continue
+                    if nid in eids:continue
                     eids.add(nid)
-                    sa=SA_MAP.get(s.get("typeOfSetAside") or "",s.get("typeOfSetAside") or "Full & Open")
-                    pop=s.get("placeOfPerformance",{}) or {};ps=""
-                    if pop:
-                        so=pop.get("state",{}) or {};ps=so.get("code","") if isinstance(so,dict) else ""
-                    dl=s.get("responseDeadLine") or "";dd=""
+                    sa=SA_MAP.get(s.get("typeOfSetAside")or"",s.get("typeOfSetAside")or"Full & Open")
+                    pop=s.get("placeOfPerformance",{})or{};ps=""
+                    if pop:so=pop.get("state",{})or{};ps=so.get("code","") if isinstance(so,dict) else ""
+                    dl=s.get("responseDeadLine")or"";dd=""
                     if dl:
                         for f in["%Y-%m-%d","%m/%d/%Y"]:
-                            try: dd=datetime.strptime(dl[:10],f).strftime("%Y-%m-%d");break
-                            except: pass
+                            try:dd=datetime.strptime(dl[:10],f).strftime("%Y-%m-%d");break
+                            except:pass
                     if dd:
                         try:
-                            if datetime.strptime(dd,"%Y-%m-%d").date()<date.today(): continue
-                        except: pass
-                    aw=s.get("award",{}) or {}
-                    try: v=float(aw.get("amount",0) or 0)
-                    except: v=0
-                    opps.append({"id":f"sam-{uuid.uuid4().hex[:8]}","company_id":company["id"],"title":(s.get("title") or "Untitled").strip(),"agency":s.get("fullParentPathName","") or "","naics":s.get("naicsCode") or naics,"location":ps or "","due_date":dd,"value":v,"set_aside":sa,"scope":(s.get("description","") or s.get("title","") or "")[:2000],"status":"new","source":"sam.gov","sam_notice_id":nid,"sam_sol_number":s.get("solicitationNumber",""),"sam_posted_date":s.get("postedDate",""),"sam_type":s.get("type",""),"sam_link":f"https://sam.gov/opp/{nid}/view" if nid else ""})
-            except Exception as e: print(f"SAM error: {e}")
+                            if datetime.strptime(dd,"%Y-%m-%d").date()<date.today():continue
+                        except:pass
+                    aw=s.get("award",{})or{}
+                    try:v=float(aw.get("amount",0)or 0)
+                    except:v=0
+                    opps.append({"id":f"sam-{uuid.uuid4().hex[:8]}","company_id":company["id"],"title":(s.get("title")or"Untitled").strip(),"agency":s.get("fullParentPathName","")or"","naics":s.get("naicsCode")or naics,"location":ps or"","due_date":dd,"value":v,"set_aside":sa,"scope":(s.get("description","")or s.get("title","")or"")[:2000],"status":"new","source":"sam.gov","sam_notice_id":nid,"sam_sol_number":s.get("solicitationNumber",""),"sam_posted_date":s.get("postedDate",""),"sam_type":s.get("type",""),"sam_link":f"https://sam.gov/opp/{nid}/view" if nid else ""})
+            except Exception as e:print(f"SAM error: {e}")
     return opps
 
-
-# ── Auto-refresh ──
-AUTO_REFRESH_HOURS=6
-auto_refresh_status={"last_run":None,"next_run":None,"last_result":None,"running":False}
-
-async def auto_refresh_loop():
+# Auto-refresh
+ARH=6;ars={"last_run":None,"next_run":None,"last_result":None,"running":False}
+async def ar_loop():
     while True:
         await asyncio.sleep(10)
-        session=SessionLocal()
+        se=SessionLocal()
         try:
-            for comp in session.query(Company).all():
-                cd=company_to_dict(comp)
-                if not cd.get("sam_api_key"): continue
-                if not check_subscription(comp): continue
-                auto_refresh_status["running"]=True;auto_refresh_status["last_run"]=datetime.now().isoformat()
+            for comp in se.query(Company).all():
+                cd=c2d(comp)
+                if not cd.get("sam_api_key")or not check_sub(comp):continue
+                ars["running"]=True;ars["last_run"]=datetime.now().isoformat()
                 try:
-                    new=await fetch_sam(cd,30);added=0;notify=[];nm=cd.get("notify_min_score",75)
+                    new=await fetch_sam(cd,30);added=0;nfy=[];nm=cd.get("notify_min_score",75)
                     for o in new:
-                        s=score_opportunity(o,cd)
-                        if s["score"]>=40: session.add(Opportunity(**o));added+=1
-                        if s["score"]>=nm: notify.append({**o,**s})
-                    session.commit()
-                    if notify: await send_notifications(cd,notify)
-                    auto_refresh_status["last_result"]=f"Added {added} for {cd['name']}"
-                except Exception as e: session.rollback();auto_refresh_status["last_result"]=str(e)[:100]
-                auto_refresh_status["running"]=False
-        finally: session.close()
-        auto_refresh_status["next_run"]=(datetime.now()+timedelta(hours=AUTO_REFRESH_HOURS)).isoformat()
-        await asyncio.sleep(AUTO_REFRESH_HOURS*3600)
+                        sc=score(o,cd)
+                        if sc["score"]>=40:se.add(Opportunity(**o));added+=1
+                        if sc["score"]>=nm:nfy.append({**o,**sc})
+                    se.commit()
+                    if nfy:await notify(cd,nfy)
+                    ars["last_result"]=f"Added {added} for {cd['name']}"
+                except Exception as e:se.rollback();ars["last_result"]=str(e)[:100]
+                ars["running"]=False
+        finally:se.close()
+        ars["next_run"]=(datetime.now()+timedelta(hours=ARH)).isoformat()
+        await asyncio.sleep(ARH*3600)
 
 @asynccontextmanager
 async def lifespan(app):
-    init_db();task=asyncio.create_task(auto_refresh_loop())
-    yield;task.cancel()
+    init_db();task=asyncio.create_task(ar_loop());yield;task.cancel()
 
-app=FastAPI(title="ConstructBid AI",version="6.0.0",lifespan=lifespan)
+app=FastAPI(title="ConstructBid AI",version="7.0.0",lifespan=lifespan)
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_methods=["*"],allow_headers=["*"])
 
-
-# ── Models ──
-class SignupRequest(BaseModel):
+# Models
+class SignupReq(BaseModel):
     email:str;password:str;company_name:str;name:Optional[str]=""
-class LoginRequest(BaseModel):
+class LoginReq(BaseModel):
     email:str;password:str
-class CompanyUpdate(BaseModel):
-    name:str;services:list[str];certifications:list[str];naics:list[str]
-    bonding_capacity:float;regions:list[str];sam_api_key:Optional[str]=""
-    notify_email:Optional[str]="";notify_phone:Optional[str]=""
-    notify_enabled:Optional[bool]=False;notify_min_score:Optional[int]=75
-class OpportunityCreate(BaseModel):
+class CompanyUpd(BaseModel):
+    name:str;services:list[str];certifications:list[str];naics:list[str];bonding_capacity:float;regions:list[str]
+    sam_api_key:Optional[str]="";notify_email:Optional[str]="";notify_phone:Optional[str]=""
+    notify_enabled:Optional[bool]=False;notify_min_score:Optional[int]=75;theme:Optional[str]="dark-blue"
+class OppCreate(BaseModel):
     title:str;agency:str;naics:str;location:str;due_date:str;value:float;set_aside:str;scope:str
-class FieldReportRequest(BaseModel):
+class OppUpdate(BaseModel):
+    status:Optional[str]=None;notes:Optional[str]=None;outcome:Optional[str]=None;outcome_value:Optional[float]=None
+class FRReq(BaseModel):
     project_name:str;notes:str
-class ProposalRequest(BaseModel):
+class PropReq(BaseModel):
     section:str;opportunity_id:str
-class SAMFetchRequest(BaseModel):
+class SAMReq(BaseModel):
     days_back:Optional[int]=30;min_score:Optional[int]=40
-class VoiceInput(BaseModel):
+class VoiceIn(BaseModel):
     transcript:str
 
-
-# ── Proposal Templates ──
-def gen_proposal(section,opp,company,past):
-    t={"executive":f"EXECUTIVE SUMMARY — DRAFT\n\n{company['name']} is pleased to submit this proposal for {opp['title']} in response to {opp.get('agency','')}.\n\nAs a certified {', '.join(company.get('certifications',[]))} firm, {company['name']} brings proven experience in {', '.join(company.get('services','')[:3])}.\n\nWith bonding of ${company.get('bonding_capacity',0)/1e6:.1f}M across {', '.join(company.get('regions',[]))}, we are well-positioned.\n\n[ADD: Approach]\n[ADD: Differentiators]\n[ADD: Timeline]",
-    "technical":f"TECHNICAL APPROACH — DRAFT\n\nProject Understanding:\n{opp.get('scope','[Not provided]')}\n\nPhase 1 — Mobilization\n- Site assessment\n- Work plan\n- Safety/QC plans\n\nPhase 2 — Execution\n- [ADD: Tasks]\n- QC inspections\n- Daily reporting\n\nPhase 3 — Closeout\n- Final inspections\n- As-built docs\n- Site restoration",
+# Proposals
+def gen_prop(sec,o,c,past):
+    t={"executive":f"EXECUTIVE SUMMARY — DRAFT\n\n{c['name']} is pleased to submit this proposal for {o['title']} in response to {o.get('agency','')}.\n\nAs a certified {', '.join(c.get('certifications',[]))} firm, {c['name']} brings proven experience in {', '.join(c.get('services','')[:3])}.\n\nWith bonding of ${c.get('bonding_capacity',0)/1e6:.1f}M across {', '.join(c.get('regions',[]))}, we are well-positioned.\n\n[ADD: Approach]\n[ADD: Differentiators]\n[ADD: Timeline]",
+    "technical":f"TECHNICAL APPROACH — DRAFT\n\nProject Understanding:\n{o.get('scope','[Not provided]')}\n\nPhase 1 — Mobilization\n- Site assessment\n- Work plan\n- Safety/QC plans\n\nPhase 2 — Execution\n- [ADD: Tasks]\n- QC inspections\n- Daily reporting\n\nPhase 3 — Closeout\n- Final inspections\n- As-built docs\n- Site restoration",
     "pastPerformance":"PAST PERFORMANCE — DRAFT\n\n"+("\n\n".join([f"{i+1}. {p['name']}\n   Client: {p['client']}\n   Value: ${p['value']:,.0f}\n   Year: {p['year']}\n   Scope: {p['scope']}" for i,p in enumerate(past)]) if past else "[No projects yet]"),
     "staffing":"STAFFING PLAN — DRAFT\n\n1. Project Manager — [Name]\n2. Superintendent — [Name]\n3. Safety Officer — [Certs]\n4. QC Manager — [Certs]",
-    "compliance":"COMPLIANCE CHECKLIST — DRAFT\n\n"+"\n".join([f"[ ] {c} current" for c in company.get("certifications",[])])+f"\n[ ] NAICS {opp.get('naics','')} confirmed\n[ ] Bonding sufficient\n[ ] Insurance current\n[ ] Licenses obtained"}
-    return t.get(section,"Section not found.")
-
+    "compliance":"COMPLIANCE CHECKLIST\n\n"+"\n".join([f"[ ] {x} current" for x in c.get("certifications",[])])+f"\n[ ] NAICS {o.get('naics','')} confirmed\n[ ] Bonding sufficient\n[ ] Insurance current\n[ ] Licenses obtained"}
+    return t.get(sec,"Not found.")
 
 # ═══ ROUTES ═══
-
 @app.get("/",response_class=HTMLResponse)
 def landing():
-    for p in [os.path.join(os.path.dirname(__file__),"..","..","landing.html"),
-              os.path.join(os.path.dirname(__file__),"..","landing.html")]:
+    for p in[os.path.join(os.path.dirname(__file__),"..","..","landing.html"),os.path.join(os.path.dirname(__file__),"..","landing.html")]:
         if os.path.exists(p):
-            with open(p) as f: return HTMLResponse(f.read())
+            with open(p) as f:return HTMLResponse(f.read())
     return HTMLResponse('<meta http-equiv="refresh" content="0;url=/dashboard">')
 
 @app.get("/api/status")
-def status():
-    return {"app":"ConstructBid AI","version":"6.0.0","status":"running"}
+def status():return{"app":"ConstructBid AI","version":"7.0.0","status":"running"}
 
 @app.get("/dashboard",response_class=HTMLResponse)
 def dashboard():
-    for p in [os.path.join(os.path.dirname(__file__),"..","..","constructbid-ai-dashboard.html"),
-              os.path.join(os.path.dirname(__file__),"..","constructbid-ai-dashboard.html")]:
+    for p in[os.path.join(os.path.dirname(__file__),"..","..","constructbid-ai-dashboard.html"),os.path.join(os.path.dirname(__file__),"..","constructbid-ai-dashboard.html")]:
         if os.path.exists(p):
-            with open(p) as f: return HTMLResponse(f.read())
+            with open(p) as f:return HTMLResponse(f.read())
     return HTMLResponse("<h1>Dashboard not found</h1>",status_code=404)
 
-# ── Auth ──
+# Auth
 @app.post("/api/signup")
-def signup(data:SignupRequest):
-    if len(data.password)<6: raise HTTPException(400,"Password must be 6+ characters")
-    session=SessionLocal()
+def signup(d:SignupReq):
+    if len(d.password)<6:raise HTTPException(400,"Password 6+ chars")
+    se=SessionLocal()
     try:
-        if session.query(User).filter(User.email==data.email.lower().strip()).first():
-            raise HTTPException(400,"Email already registered")
+        if se.query(User).filter(User.email==d.email.lower().strip()).first():raise HTTPException(400,"Email taken")
         cid=f"co-{uuid.uuid4().hex[:8]}";uid=f"usr-{uuid.uuid4().hex[:8]}"
-        trial_end = datetime.utcnow() + timedelta(days=TRIAL_DAYS)
-        company=Company(id=cid,name=data.company_name or "My Company",plan_status="trial",trial_ends_at=trial_end)
-        user=User(id=uid,email=data.email.lower().strip(),password_hash=hash_password(data.password),name=data.name or "",company_id=cid)
-        session.add(company);session.add(user);session.commit()
-        token=create_token(uid,cid)
-        return {"token":token,"user":{"id":uid,"email":user.email,"name":user.name,"company_id":cid},
-                "company":{"id":cid,"name":company.name,"plan_status":"trial","trial_days_left":TRIAL_DAYS}}
-    finally: session.close()
+        te=datetime.utcnow()+timedelta(days=TRIAL_DAYS)
+        co=Company(id=cid,name=d.company_name or"My Company",plan_status="trial",trial_ends_at=te)
+        us=User(id=uid,email=d.email.lower().strip(),password_hash=hp(d.password),name=d.name or"",company_id=cid)
+        se.add(co);se.add(us);se.commit()
+        return{"token":ct(uid,cid),"user":{"id":uid,"email":us.email,"name":us.name,"company_id":cid},"company":{"id":cid,"name":co.name,"plan_status":"trial","trial_days_left":TRIAL_DAYS}}
+    finally:se.close()
 
 @app.post("/api/login")
-def login(data:LoginRequest):
-    session=SessionLocal()
+def login(d:LoginReq):
+    se=SessionLocal()
     try:
-        user=session.query(User).filter(User.email==data.email.lower().strip()).first()
-        if not user or not verify_password(data.password,user.password_hash):
-            raise HTTPException(401,"Invalid email or password")
-        token=create_token(user.id,user.company_id)
-        comp=session.query(Company).filter(Company.id==user.company_id).first()
-        plan_info = get_plan_info(comp)
-        return {"token":token,"user":{"id":user.id,"email":user.email,"name":user.name,"company_id":user.company_id},
-                "company":{"id":comp.id,"name":comp.name,**plan_info} if comp else None}
-    finally: session.close()
+        u=se.query(User).filter(User.email==d.email.lower().strip()).first()
+        if not u or not vp(d.password,u.password_hash):raise HTTPException(401,"Invalid credentials")
+        co=se.query(Company).filter(Company.id==u.company_id).first()
+        pi=plan_info(co)
+        return{"token":ct(u.id,u.company_id),"user":{"id":u.id,"email":u.email,"name":u.name,"company_id":u.company_id},"company":{"id":co.id,"name":co.name,**pi} if co else None}
+    finally:se.close()
 
 @app.get("/api/me")
-def get_me(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def me(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        user=session.query(User).filter(User.id==u["user_id"]).first()
-        comp=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not user: raise HTTPException(404)
-        plan_info = get_plan_info(comp) if comp else {}
-        return {"user":{"id":user.id,"email":user.email,"name":user.name,"company_id":user.company_id},
-                "company":{"id":comp.id,"name":comp.name,**plan_info} if comp else None}
-    finally: session.close()
+        us=se.query(User).filter(User.id==u["user_id"]).first()
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not us:raise HTTPException(404)
+        pi=plan_info(co) if co else{}
+        return{"user":{"id":us.id,"email":us.email,"name":us.name,"company_id":us.company_id},"company":{"id":co.id,"name":co.name,"theme":co.theme or"dark-blue",**pi} if co else None}
+    finally:se.close()
 
-def get_plan_info(comp):
-    """Get plan status and trial info."""
-    if not comp: return {"plan_status":"trial"}
-    status = comp.plan_status or "trial"
-    info = {"plan_status": status}
-    if status == "trial" and comp.trial_ends_at:
-        days_left = (comp.trial_ends_at - datetime.utcnow()).days
-        if days_left < 0:
-            info["plan_status"] = "expired"
-            info["trial_days_left"] = 0
-        else:
-            info["trial_days_left"] = days_left
-    elif status == "active":
-        info["trial_days_left"] = None
-    return info
-
-
-# ── Stripe Billing ──
-@app.post("/api/create-checkout")
-def create_checkout(request:Request):
-    u=get_current_user(request)
-    if not STRIPE_SECRET or not STRIPE_PRICE_ID:
-        raise HTTPException(500, "Stripe not configured")
-    session=SessionLocal()
-    try:
-        comp=session.query(Company).filter(Company.id==u["company_id"]).first()
-        user=session.query(User).filter(User.id==u["user_id"]).first()
-        if not comp: raise HTTPException(404)
-
-        # Create or reuse Stripe customer
-        if comp.stripe_customer_id:
-            customer_id = comp.stripe_customer_id
-        else:
-            customer = stripe.Customer.create(
-                email=user.email,
-                name=comp.name,
-                metadata={"company_id": comp.id, "user_id": user.id}
-            )
-            comp.stripe_customer_id = customer.id
-            session.commit()
-            customer_id = customer.id
-
-        # Determine base URL
-        base_url = str(request.base_url).rstrip("/")
-
-        checkout = stripe.checkout.Session.create(
-            customer=customer_id,
-            payment_method_types=["card"],
-            line_items=[{"price": STRIPE_PRICE_ID, "quantity": 1}],
-            mode="subscription",
-            success_url=f"{base_url}/dashboard?billing=success",
-            cancel_url=f"{base_url}/dashboard?billing=cancelled",
-            metadata={"company_id": comp.id}
-        )
-        return {"checkout_url": checkout.url}
-    finally: session.close()
-
-@app.post("/api/billing-portal")
-def billing_portal(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
-    try:
-        comp=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not comp or not comp.stripe_customer_id:
-            raise HTTPException(400, "No billing account found. Subscribe first.")
-        base_url = str(request.base_url).rstrip("/")
-        portal = stripe.billing_portal.Session.create(
-            customer=comp.stripe_customer_id,
-            return_url=f"{base_url}/dashboard"
-        )
-        return {"portal_url": portal.url}
-    finally: session.close()
-
-@app.get("/api/billing-status")
-def billing_status(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
-    try:
-        comp=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not comp: raise HTTPException(404)
-        return get_plan_info(comp)
-    finally: session.close()
-
-@app.post("/api/stripe-webhook")
-async def stripe_webhook(request:Request):
-    """Handle Stripe webhook events."""
-    body = await request.body()
-    sig = request.headers.get("stripe-signature", "")
-
-    try:
-        if STRIPE_WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(body, sig, STRIPE_WEBHOOK_SECRET)
-        else:
-            event = json.loads(body)
-    except Exception as e:
-        print(f"[STRIPE] Webhook error: {e}")
-        raise HTTPException(400, "Invalid webhook")
-
-    event_type = event.get("type", "") if isinstance(event, dict) else event.type
-    data = event.get("data", {}).get("object", {}) if isinstance(event, dict) else event.data.object
-
-    session = SessionLocal()
-    try:
-        if event_type == "checkout.session.completed":
-            cid = data.get("metadata", {}).get("company_id", "")
-            sub_id = data.get("subscription", "")
-            customer_id = data.get("customer", "")
-            if cid:
-                comp = session.query(Company).filter(Company.id == cid).first()
-                if comp:
-                    comp.plan_status = "active"
-                    comp.stripe_subscription_id = sub_id
-                    comp.stripe_customer_id = customer_id
-                    session.commit()
-                    print(f"[STRIPE] ✓ {comp.name} subscribed!")
-
-        elif event_type in ("customer.subscription.deleted", "customer.subscription.paused"):
-            sub_id = data.get("id", "")
-            if sub_id:
-                comp = session.query(Company).filter(Company.stripe_subscription_id == sub_id).first()
-                if comp:
-                    comp.plan_status = "cancelled"
-                    session.commit()
-                    print(f"[STRIPE] ✗ {comp.name} cancelled")
-
-        elif event_type == "customer.subscription.updated":
-            sub_id = data.get("id", "")
-            status = data.get("status", "")
-            if sub_id:
-                comp = session.query(Company).filter(Company.stripe_subscription_id == sub_id).first()
-                if comp:
-                    if status == "active":
-                        comp.plan_status = "active"
-                    elif status in ("past_due", "unpaid"):
-                        comp.plan_status = "expired"
-                    session.commit()
-
-        elif event_type == "invoice.payment_failed":
-            customer_id = data.get("customer", "")
-            if customer_id:
-                comp = session.query(Company).filter(Company.stripe_customer_id == customer_id).first()
-                if comp:
-                    comp.plan_status = "expired"
-                    session.commit()
-                    print(f"[STRIPE] ! Payment failed for {comp.name}")
-    finally:
-        session.close()
-
-    return {"received": True}
-
-
-# ── Company ──
+# Company
 @app.get("/api/company")
-def get_company(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def get_co(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not c: raise HTTPException(404)
-        d=company_to_dict(c);k=d.get("sam_api_key","")
-        d["sam_api_key_set"]=bool(k);d["sam_api_key_preview"]=k[:6]+"..." if len(k)>6 else k
-        d.update(get_plan_info(c))
-        return d
-    finally: session.close()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not c:raise HTTPException(404)
+        d=c2d(c);k=d.get("sam_api_key","");d["sam_api_key_set"]=bool(k);d["sam_api_key_preview"]=k[:6]+"..." if len(k)>6 else k
+        d.update(plan_info(c));return d
+    finally:se.close()
 
 @app.put("/api/company")
-def update_company(data:CompanyUpdate,request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def upd_co(data:CompanyUpd,request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not c: raise HTTPException(404)
-        for k,v in data.dict().items(): setattr(c,k,v)
-        c.updated_at=datetime.utcnow();session.commit()
-        return company_to_dict(c)
-    finally: session.close()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not c:raise HTTPException(404)
+        for k,v in data.dict().items():setattr(c,k,v)
+        c.updated_at=datetime.utcnow();se.commit();return c2d(c)
+    finally:se.close()
 
-# ── Opportunities ──
+# Opportunities
 @app.get("/api/opportunities")
-def list_opportunities(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def list_opps(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        cd=company_to_dict(c) if c else {}
-        opps=session.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
-        return sorted([{**opp_to_dict(o),**score_opportunity(opp_to_dict(o),cd)} for o in opps],key=lambda x:x["score"],reverse=True)
-    finally: session.close()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first();cd=c2d(c) if c else{}
+        opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
+        return sorted([{**o2d(o),**score(o2d(o),cd)} for o in opps],key=lambda x:x["score"],reverse=True)
+    finally:se.close()
 
 @app.post("/api/opportunities")
-def create_opportunity(data:OpportunityCreate,request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def create_opp(data:OppCreate,request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        opp=Opportunity(id=f"opp-{uuid.uuid4().hex[:8]}",company_id=u["company_id"],**data.dict(),source="manual")
-        session.add(opp);session.commit()
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        return {**opp_to_dict(opp),**score_opportunity(opp_to_dict(opp),company_to_dict(c) if c else {})}
-    finally: session.close()
+        o=Opportunity(id=f"opp-{uuid.uuid4().hex[:8]}",company_id=u["company_id"],**data.dict(),source="manual")
+        se.add(o);se.commit()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        return{**o2d(o),**score(o2d(o),c2d(c) if c else{})}
+    finally:se.close()
 
-@app.delete("/api/opportunities/{opp_id}")
-def delete_opportunity(opp_id:str,request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+@app.put("/api/opportunities/{oid}")
+def update_opp(oid:str,data:OppUpdate,request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        o=session.query(Opportunity).filter(Opportunity.id==opp_id,Opportunity.company_id==u["company_id"]).first()
-        if not o: raise HTTPException(404)
-        session.delete(o);session.commit();return {"deleted":True}
-    finally: session.close()
+        o=se.query(Opportunity).filter(Opportunity.id==oid,Opportunity.company_id==u["company_id"]).first()
+        if not o:raise HTTPException(404)
+        if data.status is not None:o.status=data.status
+        if data.notes is not None:o.notes=data.notes
+        if data.outcome is not None:o.outcome=data.outcome
+        if data.outcome_value is not None:o.outcome_value=data.outcome_value
+        se.commit();return o2d(o)
+    finally:se.close()
 
+@app.delete("/api/opportunities/{oid}")
+def del_opp(oid:str,request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        o=se.query(Opportunity).filter(Opportunity.id==oid,Opportunity.company_id==u["company_id"]).first()
+        if not o:raise HTTPException(404)
+        se.delete(o);se.commit();return{"deleted":True}
+    finally:se.close()
+
+# Analytics
+@app.get("/api/analytics")
+def analytics(request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        c=se.query(Company).filter(Company.id==u["company_id"]).first();cd=c2d(c) if c else{}
+        opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
+        total=len(opps)
+        by_status={};by_outcome={};total_value=0;won_value=0
+        for o in opps:
+            st=o.status or"new";oc=o.outcome or""
+            by_status[st]=by_status.get(st,0)+1
+            if oc:by_outcome[oc]=by_outcome.get(oc,0)+1
+            total_value+=o.value or 0
+            if oc=="won":won_value+=o.outcome_value or o.value or 0
+        scored=[score(o2d(o),cd) for o in opps]
+        pursue=sum(1 for s in scored if s["recommendation"]=="PURSUE")
+        review=sum(1 for s in scored if s["recommendation"]=="REVIEW")
+        won=by_outcome.get("won",0);lost=by_outcome.get("lost",0)
+        win_rate=round(won/(won+lost)*100) if(won+lost)>0 else 0
+        return{"total":total,"by_status":by_status,"by_outcome":by_outcome,"pursue":pursue,"review":review,
+               "total_pipeline_value":total_value,"won_value":won_value,"win_rate":win_rate,
+               "won":won,"lost":lost,"submitted":by_status.get("submitted",0)}
+    finally:se.close()
+
+# SAM
 @app.post("/api/sam-refresh")
-async def sam_refresh(req:SAMFetchRequest,request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+async def sam_refresh(req:SAMReq,request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not c: raise HTTPException(404)
-        cd=company_to_dict(c)
-        if not cd.get("sam_api_key"): raise HTTPException(400,"SAM.gov API key not set.")
-        old=session.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).count()
-        session.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).delete()
-        session.commit()
-    finally: session.close()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not c:raise HTTPException(404)
+        cd=c2d(c)
+        if not cd.get("sam_api_key"):raise HTTPException(400,"SAM.gov API key not set.")
+        old=se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).count()
+        se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).delete();se.commit()
+    finally:se.close()
     new=await fetch_sam(cd,req.days_back);scored=[];added=0
-    session=SessionLocal()
+    se=SessionLocal()
     try:
         for o in new:
-            s=score_opportunity(o,cd)
-            if s["score"]>=req.min_score: scored.append({**o,**s});session.add(Opportunity(**o));added+=1
-        session.commit()
-    finally: session.close()
-    return {"cleared":old,"fetched":len(new),"added":added,"opportunities":sorted(scored,key=lambda x:x["score"],reverse=True)}
+            s=score(o,cd)
+            if s["score"]>=req.min_score:scored.append({**o,**s});se.add(Opportunity(**o));added+=1
+        se.commit()
+    finally:se.close()
+    return{"cleared":old,"fetched":len(new),"added":added}
 
 @app.post("/api/clear-expired")
-def clear_expired(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def clear_exp(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        ts=date.today().strftime("%Y-%m-%d")
-        opps=session.query(Opportunity).filter(Opportunity.company_id==u["company_id"],Opportunity.due_date<ts,Opportunity.due_date!="").all()
+        ts=date.today().strftime("%Y-%m-%d");opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"],Opportunity.due_date<ts,Opportunity.due_date!="").all()
         rm=len(opps)
-        for o in opps: session.delete(o)
-        session.commit();return {"removed":rm,"remaining":session.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).count()}
-    finally: session.close()
+        for o in opps:se.delete(o)
+        se.commit();return{"removed":rm}
+    finally:se.close()
 
 @app.post("/api/clear-passes")
-def clear_passes(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def clear_pass(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first();cd=company_to_dict(c) if c else {}
-        opps=session.query(Opportunity).filter(Opportunity.company_id==u["company_id"],Opportunity.source=="sam.gov").all()
+        c=se.query(Company).filter(Company.id==u["company_id"]).first();cd=c2d(c) if c else{}
+        opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"],Opportunity.source=="sam.gov").all()
         rm=0
         for o in opps:
-            if score_opportunity(opp_to_dict(o),cd)["recommendation"]=="PASS": session.delete(o);rm+=1
-        session.commit();return {"removed":rm,"remaining":session.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).count()}
-    finally: session.close()
+            if score(o2d(o),cd)["recommendation"]=="PASS":se.delete(o);rm+=1
+        se.commit();return{"removed":rm}
+    finally:se.close()
 
 @app.post("/api/proposal")
-def create_proposal(req:ProposalRequest,request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+def proposal(req:PropReq,request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        o=session.query(Opportunity).filter(Opportunity.id==req.opportunity_id,Opportunity.company_id==u["company_id"]).first()
-        if not o: raise HTTPException(404)
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        ps=[proj_to_dict(p) for p in session.query(Project).filter(Project.company_id==u["company_id"]).all()]
-        return {"section":req.section,"content":gen_proposal(req.section,opp_to_dict(o),company_to_dict(c) if c else {},ps)}
-    finally: session.close()
+        o=se.query(Opportunity).filter(Opportunity.id==req.opportunity_id,Opportunity.company_id==u["company_id"]).first()
+        if not o:raise HTTPException(404)
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        ps=[p2d(p) for p in se.query(Project).filter(Project.company_id==u["company_id"]).all()]
+        return{"section":req.section,"content":gen_prop(req.section,o2d(o),c2d(c) if c else{},ps)}
+    finally:se.close()
 
 @app.post("/api/field-report")
-def create_field_report(req:FieldReportRequest,request:Request):
-    get_current_user(request)
-    today=datetime.now().strftime("%A, %B %d, %Y")
-    return {"report":f"DAILY FIELD REPORT\n{'━'*40}\nDate: {today}\nProject: {req.project_name}\nPrepared by: [Name]\nWeather: [Conditions]\n\n─── WORK PERFORMED ───\n{req.notes}\n\n─── LABOR ───\n• Crew: [#]\n• Subs: [List]\n\n─── ISSUES ───\n• [Describe]\n\n─── SAFETY ───\n• Incidents: None\n\n─── TOMORROW ───\n• [Plan]\n{'━'*40}"}
+def field_report(req:FRReq,request:Request):
+    gu(request);today=datetime.now().strftime("%A, %B %d, %Y")
+    return{"report":f"DAILY FIELD REPORT\n{'━'*40}\nDate: {today}\nProject: {req.project_name}\nPrepared by: [Name]\n\n─── WORK PERFORMED ───\n{req.notes}\n\n─── LABOR ───\n• Crew: [#]\n• Subs: [List]\n\n─── ISSUES ───\n• [Describe]\n\n─── SAFETY ───\n• Incidents: None\n\n─── TOMORROW ───\n• [Plan]\n{'━'*40}"}
 
 @app.get("/api/projects")
-def list_projects(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
-    try: return [proj_to_dict(p) for p in session.query(Project).filter(Project.company_id==u["company_id"]).all()]
-    finally: session.close()
+def projects(request:Request):
+    u=gu(request);se=SessionLocal()
+    try:return[p2d(p) for p in se.query(Project).filter(Project.company_id==u["company_id"]).all()]
+    finally:se.close()
 
 @app.get("/api/auto-refresh-status")
-def get_auto_refresh_status(): return auto_refresh_status
+def ar_status():return ars
 
 @app.post("/api/test-notification")
-async def test_notification(request:Request):
-    u=get_current_user(request)
-    session=SessionLocal()
+async def test_notif(request:Request):
+    u=gu(request);se=SessionLocal()
     try:
-        c=session.query(Company).filter(Company.id==u["company_id"]).first()
-        if not c: raise HTTPException(404)
-        cd=company_to_dict(c)
-        if not cd.get("notify_enabled"): raise HTTPException(400,"Notifications not enabled")
-    finally: session.close()
-    await send_notifications(cd,[{"title":"TEST Notification","agency":"ConstructBid AI","score":99,"recommendation":"PURSUE","value":2500000,"due_date":"2026-05-01","set_aside":"SDVOSB","naics":"236220","location":"VA","sam_link":"https://sam.gov"}])
-    t=[]
-    if cd.get("notify_email"): t.append(f"email ({cd['notify_email']})")
-    if cd.get("notify_phone"): t.append(f"SMS ({cd['notify_phone']})")
-    return {"sent_to":t}
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not c:raise HTTPException(404)
+        cd=c2d(c)
+        if not cd.get("notify_enabled"):raise HTTPException(400,"Notifications not enabled")
+    finally:se.close()
+    await notify(cd,[{"title":"TEST Notification","agency":"ConstructBid AI","score":99,"recommendation":"PURSUE","value":2500000,"due_date":"2026-05-01"}])
+    return{"sent":True}
 
-# ── Voice AI ──
-VP="""Parse spoken company description into JSON. Fix speech-to-text errors. Return ONLY JSON:
+# Stripe
+@app.post("/api/create-checkout")
+def checkout(request:Request):
+    u=gu(request)
+    if not STRIPE_SECRET or not STRIPE_PRICE_ID:raise HTTPException(500,"Stripe not configured")
+    se=SessionLocal()
+    try:
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        us=se.query(User).filter(User.id==u["user_id"]).first()
+        if not co:raise HTTPException(404)
+        if co.stripe_customer_id:cust_id=co.stripe_customer_id
+        else:
+            cust=stripe.Customer.create(email=us.email,name=co.name,metadata={"company_id":co.id})
+            co.stripe_customer_id=cust.id;se.commit();cust_id=cust.id
+        base=str(request.base_url).rstrip("/")
+        sess=stripe.checkout.Session.create(customer=cust_id,payment_method_types=["card"],line_items=[{"price":STRIPE_PRICE_ID,"quantity":1}],mode="subscription",success_url=f"{base}/dashboard?billing=success",cancel_url=f"{base}/dashboard",metadata={"company_id":co.id})
+        return{"checkout_url":sess.url}
+    finally:se.close()
+
+@app.post("/api/billing-portal")
+def portal(request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not co or not co.stripe_customer_id:raise HTTPException(400,"No billing account")
+        base=str(request.base_url).rstrip("/")
+        p=stripe.billing_portal.Session.create(customer=co.stripe_customer_id,return_url=f"{base}/dashboard")
+        return{"portal_url":p.url}
+    finally:se.close()
+
+@app.post("/api/stripe-webhook")
+async def webhook(request:Request):
+    body=await request.body();sig=request.headers.get("stripe-signature","")
+    try:
+        if STRIPE_WEBHOOK_SECRET:event=stripe.Webhook.construct_event(body,sig,STRIPE_WEBHOOK_SECRET)
+        else:event=json.loads(body)
+    except:raise HTTPException(400,"Bad webhook")
+    et=event.get("type","") if isinstance(event,dict) else event.type
+    d=event.get("data",{}).get("object",{}) if isinstance(event,dict) else event.data.object
+    se=SessionLocal()
+    try:
+        if et=="checkout.session.completed":
+            cid=d.get("metadata",{}).get("company_id","")
+            if cid:
+                co=se.query(Company).filter(Company.id==cid).first()
+                if co:co.plan_status="active";co.stripe_subscription_id=d.get("subscription","");se.commit()
+        elif et in("customer.subscription.deleted","customer.subscription.paused"):
+            sid=d.get("id","")
+            if sid:
+                co=se.query(Company).filter(Company.stripe_subscription_id==sid).first()
+                if co:co.plan_status="cancelled";se.commit()
+        elif et=="invoice.payment_failed":
+            cust=d.get("customer","")
+            if cust:
+                co=se.query(Company).filter(Company.stripe_customer_id==cust).first()
+                if co:co.plan_status="expired";se.commit()
+    finally:se.close()
+    return{"received":True}
+
+# Voice
+VP="""Parse spoken company description into JSON. Fix speech errors. Return ONLY JSON:
 {"name":"","services":[],"certifications":[],"regions":[],"bonding_capacity":0,"naics":[]}
-SDVOSB often heard as "STV OSB". States→2-letter codes. Bonding in dollars. Only include fields with data."""
+SDVOSB often heard as "STV OSB". States→2-letter codes. Bonding in dollars. Only fields with data."""
 
 @app.post("/api/parse-voice-profile")
-async def parse_voice_profile(data:VoiceInput,request:Request):
-    get_current_user(request)
-    ak=load_env_var("ANTHROPIC_API_KEY")
+async def voice(data:VoiceIn,request:Request):
+    gu(request);ak=env("ANTHROPIC_API_KEY")
     if ak:
         try:
             async with httpx.AsyncClient(timeout=30) as c:
@@ -688,18 +565,10 @@ async def parse_voice_profile(data:VoiceInput,request:Request):
                     txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
                     txt=re.sub(r'^```(?:json)?\s*','',txt.strip());txt=re.sub(r'\s*```$','',txt)
                     p=json.loads(txt);result={k:v for k,v in p.items() if v}
-                    if "bonding_capacity" in result: result["bonding_capacity"]=int(result["bonding_capacity"])
-                    return {"parsed":result,"transcript":data.transcript,"fields_found":len(result),"method":"ai"}
-        except Exception as e: print(f"Voice AI error: {e}")
-    text=data.transcript.lower();result={}
-    svc={"construction":"General Construction","cemetery":"Cemetery Operations","facilities":"Facilities Maintenance","hvac":"HVAC/Plumbing","landscaping":"Landscaping","demolition":"Demolition","renovation":"Renovations"}
-    result["services"]=list({v for k,v in svc.items() if k in text}) or None
-    cert={"sdvosb":"SDVOSB","stv osb":"SDVOSB","veteran":"SDVOSB","8a":"8(a)","hubzone":"HUBZone"}
-    result["certifications"]=list({v for k,v in cert.items() if k in text}) or None
-    st={"virginia":"VA","ohio":"OH","michigan":"MI","california":"CA","florida":"FL","georgia":"GA","texas":"TX","maine":"ME","maryland":"MD","north carolina":"NC","tennessee":"TN","oklahoma":"OK","nebraska":"NE","wyoming":"WY","indiana":"IN"}
-    result["regions"]=[v for k,v in st.items() if k in text] or None
-    result={k:v for k,v in result.items() if v}
-    return {"parsed":result,"transcript":data.transcript,"fields_found":len(result),"method":"keywords"}
+                    if "bonding_capacity" in result:result["bonding_capacity"]=int(result["bonding_capacity"])
+                    return{"parsed":result,"transcript":data.transcript,"fields_found":len(result),"method":"ai"}
+        except Exception as e:print(f"Voice error: {e}")
+    return{"parsed":{},"transcript":data.transcript,"fields_found":0,"method":"fallback"}
 
 if __name__=="__main__":
     import uvicorn;uvicorn.run(app,host="0.0.0.0",port=8000)

@@ -6,64 +6,66 @@
 <title>ConstructBid AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0f1a;--surface:#111827;--surface2:#1a2332;--border:#1e2d3d;--accent:#3b82f6;--accent2:#06b6d4;--text:#e2e8f0;--dim:#64748b;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
+/* Theme Variables */
+[data-theme="dark-blue"]{--bg:#0a0f1a;--surface:#111827;--surface2:#1a2332;--border:#1e2d3d;--accent:#3b82f6;--accent2:#06b6d4;--text:#e2e8f0;--dim:#64748b;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
+[data-theme="dark-green"]{--bg:#0a1410;--surface:#0f1f18;--surface2:#162b22;--border:#1e3a2e;--accent:#22c55e;--accent2:#10b981;--text:#e2f0e8;--dim:#5f8a72;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
+[data-theme="midnight-purple"]{--bg:#0d0a1a;--surface:#15112b;--surface2:#1e1836;--border:#2d2450;--accent:#8b5cf6;--accent2:#a78bfa;--text:#e8e2f4;--dim:#7c6b9e;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
+[data-theme="slate"]{--bg:#0f1318;--surface:#181d25;--surface2:#1f2630;--border:#2a3344;--accent:#f59e0b;--accent2:#fbbf24;--text:#e2e6ec;--dim:#6b7990;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
+[data-theme="light"]{--bg:#f5f7fa;--surface:#ffffff;--surface2:#f0f2f5;--border:#e2e5ea;--accent:#3b82f6;--accent2:#0ea5e9;--text:#1a1f2e;--dim:#6b7280;--green:#16a34a;--yellow:#d97706;--red:#dc2626}
+
 *{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .logo{display:flex;align-items:center;gap:10px}.logo-text{font-size:18px;font-weight:700}.logo-sub{font-size:11px;color:var(--accent2);font-weight:500;letter-spacing:1.5px;text-transform:uppercase}
-.header-right{display:flex;align-items:center;gap:12px}
+.header-right{display:flex;align-items:center;gap:8px}
 nav{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px}
-nav button{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit';transition:all .2s}
+nav button{padding:8px 14px;border-radius:8px;border:none;background:transparent;color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit';transition:all .2s}
 nav button.active{background:var(--accent);color:#fff}
 main{max-width:1100px;margin:0 auto;padding:20px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;transition:border-color .2s}
-.card-clickable:hover{border-color:rgba(59,130,246,.3);cursor:pointer}
+.card-clickable:hover{border-color:color-mix(in srgb,var(--accent) 40%,transparent);cursor:pointer}
 h2{font-size:22px;font-weight:700;margin-bottom:4px}h3{font-size:16px;font-weight:600;margin-bottom:12px}
 .subtitle{font-size:13px;color:var(--dim);margin-bottom:20px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
-.stat{background:var(--surface2);border-radius:10px;padding:16px;text-align:center}
-.stat-num{font-size:28px;font-weight:700;font-family:'JetBrains Mono'}.stat-label{font-size:11px;color:var(--dim);margin-top:4px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:20px}
+.stat{background:var(--surface2);border-radius:10px;padding:14px;text-align:center}
+.stat-num{font-size:24px;font-weight:700;font-family:'JetBrains Mono'}.stat-label{font-size:10px;color:var(--dim);margin-top:4px}
 .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:var(--surface2);color:var(--dim);margin-right:4px}
 .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.badge-green{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
-.badge-yellow{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
-.badge-red{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
-.score-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:'JetBrains Mono';border-width:3px;border-style:solid;flex-shrink:0}
-.score-lg{width:68px;height:68px;font-size:22px}
+.badge-green{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green);border:1px solid color-mix(in srgb,var(--green) 25%,transparent)}
+.badge-yellow{background:color-mix(in srgb,var(--yellow) 15%,transparent);color:var(--yellow);border:1px solid color-mix(in srgb,var(--yellow) 25%,transparent)}
+.badge-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red);border:1px solid color-mix(in srgb,var(--red) 25%,transparent)}
+.score-circle{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'JetBrains Mono';border-width:3px;border-style:solid;flex-shrink:0}
+.score-lg{width:64px;height:64px;font-size:20px}
 .score-pursue{border-color:var(--green);color:var(--green)}.score-review{border-color:var(--yellow);color:var(--yellow)}.score-pass{border-color:var(--red);color:var(--red)}
-.opp-row{display:flex;justify-content:space-between;align-items:center}
-.opp-title{font-size:15px;font-weight:600;margin-bottom:6px}.opp-agency{font-size:13px;color:var(--dim);margin-bottom:8px}
-.opp-right{display:flex;align-items:center;gap:12px}
-.rec-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-top:4px}
+.opp-row{display:flex;justify-content:space-between;align-items:center}.opp-title{font-size:15px;font-weight:600;margin-bottom:5px}.opp-agency{font-size:12px;color:var(--dim);margin-bottom:6px}
+.opp-right{display:flex;align-items:center;gap:10px}.rec-label{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;margin-top:3px}
 .btn{padding:10px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit';display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn-primary{background:var(--accent);color:#fff}.btn-sam{background:linear-gradient(135deg,#059669,#06b6d4);color:#fff}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost{background:transparent;color:var(--dim);border:none}
-.btn-danger{background:var(--red);color:#fff}.btn-upgrade{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:14px;padding:12px 24px}
-.btn:hover{opacity:.85}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-danger{background:var(--red);color:#fff}.btn-upgrade{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.5}
 .btn-voice{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff}
 .btn-voice.recording{animation:pulse 1s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
 .label{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
 input,select,textarea{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:'Outfit';outline:none}
-textarea{font-family:'JetBrains Mono';font-size:13px;resize:vertical;min-height:120px;line-height:1.6}
+textarea{font-family:'JetBrains Mono';font-size:13px;resize:vertical;min-height:100px;line-height:1.6}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.form-group{margin-bottom:14px}
-pre.output{position:relative;background:var(--surface2);border-radius:10px;padding:20px;font-size:13px;font-family:'JetBrains Mono';line-height:1.7;white-space:pre-wrap;word-break:break-word;color:var(--text);border:1px solid var(--border);max-height:500px;overflow:auto}
+pre.output{position:relative;background:var(--surface2);border-radius:10px;padding:20px;font-size:13px;font-family:'JetBrains Mono';line-height:1.7;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);max-height:500px;overflow:auto}
 .copy-btn{position:absolute;top:10px;right:10px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--dim);font-size:11px;cursor:pointer}
-.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
 .detail-item{background:var(--surface2);border-radius:8px;padding:12px}.detail-item .label{margin-bottom:4px}.detail-value{font-size:15px;font-weight:600}
-.reason{font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)}
-.past-project{background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:8px}.past-project .name{font-weight:600}.past-project .meta{font-size:12px;color:var(--dim);margin-top:4px}
+.reason{font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+.past-project{background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:8px}
 .section-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.error-msg{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:var(--red);padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:13px}
-.success-msg{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green);padding:12px 16px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.error-msg{background:color-mix(in srgb,var(--red) 10%,transparent);border:1px solid color-mix(in srgb,var(--red) 20%,transparent);color:var(--red);padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px}
+.success-msg{background:color-mix(in srgb,var(--green) 10%,transparent);border:1px solid color-mix(in srgb,var(--green) 20%,transparent);color:var(--green);padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px}
 .hidden{display:none !important}
-.source-tag{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;margin-left:6px}.source-sam{background:rgba(6,182,212,.15);color:var(--accent2)}.source-manual{background:rgba(100,116,139,.15);color:var(--dim)}
-.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--dim);line-height:1.6;margin-top:8px}
+.source-tag{font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;margin-left:6px}.source-sam{background:color-mix(in srgb,var(--accent2) 15%,transparent);color:var(--accent2)}.source-manual{background:var(--surface2);color:var(--dim)}
+.info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:13px;color:var(--dim);line-height:1.6;margin-top:8px}
 a{color:var(--accent)}
 .auto-refresh-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim)}
-.auto-refresh-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}.dot-active{background:var(--green)}.dot-idle{background:var(--dim)}
-.voice-box{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(236,72,153,.1));border:1px solid rgba(139,92,246,.25);border-radius:12px;padding:20px;margin-bottom:16px;text-align:center}
-.voice-transcript{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:13px;min-height:60px;text-align:left;font-style:italic}
-.voice-results{background:var(--surface);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:12px;margin-top:12px;text-align:left;font-size:13px}
+.voice-box{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);border-radius:12px;padding:20px;margin-bottom:16px;text-align:center}
+.voice-transcript,.voice-results{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:13px;text-align:left}
 .auth-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 70px);padding:20px}
 .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:420px}
 .auth-card h2{text-align:center;margin-bottom:8px;font-size:26px}.auth-card .subtitle{text-align:center;margin-bottom:24px}
@@ -72,24 +74,36 @@ a{color:var(--accent)}
 .auth-tabs button.active{background:var(--accent);color:#fff}
 .auth-error{color:var(--red);font-size:13px;margin-top:8px;text-align:center}
 .plan-banner{border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
-.plan-trial{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.25)}
-.plan-active{background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(6,182,212,.1));border:1px solid rgba(34,197,94,.25)}
-.plan-expired{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25)}
-.plan-text{font-size:14px;font-weight:600}.plan-sub{font-size:12px;color:var(--dim);margin-top:2px}
-.billing-card{background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1));border:1px solid rgba(59,130,246,.25);border-radius:12px;padding:24px;margin-bottom:16px;text-align:center}
-.billing-price{font-size:42px;font-weight:700;font-family:'JetBrains Mono';color:var(--text)}.billing-period{font-size:14px;color:var(--dim)}
+.plan-trial{background:color-mix(in srgb,var(--yellow) 12%,transparent);border:1px solid color-mix(in srgb,var(--yellow) 25%,transparent)}
+.plan-active{background:color-mix(in srgb,var(--green) 12%,transparent);border:1px solid color-mix(in srgb,var(--green) 25%,transparent)}
+.plan-expired{background:color-mix(in srgb,var(--red) 10%,transparent);border:1px solid color-mix(in srgb,var(--red) 20%,transparent)}
+/* Theme picker */
+.theme-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.theme-swatch{width:48px;height:48px;border-radius:10px;cursor:pointer;border:3px solid transparent;transition:all .2s;position:relative}
+.theme-swatch.active{border-color:var(--accent);transform:scale(1.1)}
+.theme-swatch::after{content:'✓';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:16px;opacity:0;transition:opacity .2s}
+.theme-swatch.active::after{opacity:1}
+/* Status badges */
+.status-new{color:var(--accent)}.status-pursuing{color:var(--yellow)}.status-submitted{color:#a78bfa}.status-won{color:var(--green)}.status-lost{color:var(--red)}.status-passed{color:var(--dim)}
+/* Analytics */
+.analytics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-top:24px}
+.analytics-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;text-align:center}
+.analytics-card .stat-num{font-size:36px}
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;margin-top:16px;padding:0 8px}
+.bar{flex:1;border-radius:6px 6px 0 0;min-width:30px;transition:height .5s ease;position:relative}
+.bar-label{position:absolute;bottom:-20px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--dim);white-space:nowrap}
+.bar-value{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;font-family:'JetBrains Mono'}
+@media(max-width:768px){.form-grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}}
 </style>
 </head>
-<body>
+<body data-theme="dark-blue">
 <header>
-  <div class="logo">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>
-    <div><div class="logo-text">ConstructBid AI</div><div class="logo-sub">Contractor OS</div></div>
-  </div>
+  <div class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg><div><div class="logo-text">ConstructBid AI</div><div class="logo-sub">Contractor OS</div></div></div>
   <div class="header-right" id="header-right">
     <nav id="main-nav" class="hidden">
       <button class="active" onclick="showPage('opportunities')">Opportunities</button>
-      <button onclick="showPage('fieldreport')">Field Reports</button>
+      <button onclick="showPage('analytics')">Analytics</button>
+      <button onclick="showPage('fieldreport')">Reports</button>
       <button onclick="showPage('profile')">Company</button>
     </nav>
     <span class="hidden" id="user-badge" style="font-size:12px;color:var(--dim);background:var(--surface2);padding:6px 12px;border-radius:8px"></span>
@@ -98,53 +112,49 @@ a{color:var(--accent)}
 </header>
 <main>
   <!-- AUTH -->
-  <div id="page-auth" class="auth-page">
-    <div class="auth-card">
-      <h2>ConstructBid AI</h2>
-      <p class="subtitle">AI-powered government contracting platform</p>
-      <div class="auth-tabs"><button class="active" onclick="showAuthTab('login')">Log In</button><button onclick="showAuthTab('signup')">Sign Up</button></div>
-      <div id="auth-login">
-        <div class="form-group"><div class="label">Email</div><input id="login-email" type="email" placeholder="you@company.com"></div>
-        <div class="form-group"><div class="label">Password</div><input id="login-password" type="password" placeholder="••••••••"></div>
-        <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Log In</button>
-        <div class="auth-error" id="login-error"></div>
-      </div>
-      <div id="auth-signup" class="hidden">
-        <div class="form-group"><div class="label">Company Name</div><input id="signup-company" placeholder="e.g. KMC Solutions"></div>
-        <div class="form-group"><div class="label">Your Name</div><input id="signup-name" placeholder="e.g. Kevin"></div>
-        <div class="form-group"><div class="label">Email</div><input id="signup-email" type="email" placeholder="you@company.com"></div>
-        <div class="form-group"><div class="label">Password (6+)</div><input id="signup-password" type="password" placeholder="••••••••"></div>
-        <button class="btn btn-primary" onclick="doSignup()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Start Free 14-Day Trial</button>
-        <p style="text-align:center;font-size:12px;color:var(--dim);margin-top:12px">No credit card required. $299/mo after trial.</p>
-        <div class="auth-error" id="signup-error"></div>
-      </div>
+  <div id="page-auth" class="auth-page"><div class="auth-card">
+    <h2>ConstructBid AI</h2><p class="subtitle">AI-powered government contracting</p>
+    <div class="auth-tabs"><button class="active" onclick="showAuthTab('login')">Log In</button><button onclick="showAuthTab('signup')">Sign Up</button></div>
+    <div id="auth-login">
+      <div class="form-group"><div class="label">Email</div><input id="login-email" type="email" placeholder="you@company.com"></div>
+      <div class="form-group"><div class="label">Password</div><input id="login-password" type="password" placeholder="••••••••"></div>
+      <button class="btn btn-primary" onclick="doLogin()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Log In</button>
+      <div class="auth-error" id="login-error"></div>
     </div>
-  </div>
+    <div id="auth-signup" class="hidden">
+      <div class="form-group"><div class="label">Company Name</div><input id="signup-company" placeholder="e.g. KMC Solutions"></div>
+      <div class="form-group"><div class="label">Your Name</div><input id="signup-name"></div>
+      <div class="form-group"><div class="label">Email</div><input id="signup-email" type="email"></div>
+      <div class="form-group"><div class="label">Password (6+)</div><input id="signup-password" type="password"></div>
+      <button class="btn btn-primary" onclick="doSignup()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Start Free 14-Day Trial</button>
+      <p style="text-align:center;font-size:12px;color:var(--dim);margin-top:10px">No credit card required</p>
+      <div class="auth-error" id="signup-error"></div>
+    </div>
+  </div></div>
 
   <!-- OPPORTUNITIES -->
   <div id="page-opportunities" class="hidden">
     <div id="plan-banner"></div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
       <div><h2>Opportunities</h2><p class="subtitle" style="margin-bottom:0">Score, evaluate, and pursue the right bids</p></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-sam" onclick="refreshSAM()" id="sam-btn">🔄 Refresh SAM.gov</button>
-        <button class="btn btn-primary" onclick="toggleAddForm()">+ Add Manual</button>
-        <button class="btn btn-outline" onclick="clearExpired()" style="font-size:12px">🗑 Expired</button>
-        <button class="btn btn-outline" onclick="clearPasses()" style="font-size:12px">🗑 Red</button>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-sam" onclick="refreshSAM()" id="sam-btn">🔄 SAM.gov</button>
+        <button class="btn btn-primary" onclick="toggleAddForm()">+ Add</button>
+        <button class="btn btn-outline" onclick="clearExp()" style="font-size:12px;padding:8px 12px">🗑 Expired</button>
+        <button class="btn btn-outline" onclick="clearPass()" style="font-size:12px;padding:8px 12px">🗑 Red</button>
       </div>
     </div>
-    <div class="auto-refresh-bar"><span><span class="auto-refresh-dot dot-idle" id="ar-dot"></span> <span id="ar-text">Auto-refresh active</span></span><span id="ar-last"></span></div>
+    <div class="auto-refresh-bar"><span>⚡ Auto-refresh active</span><span id="ar-last"></span></div>
     <div id="sam-status"></div>
     <div class="stats" id="stats-bar"></div>
-    <div id="add-form" class="card hidden" style="border-color:rgba(59,130,246,.3)">
-      <h3>New Opportunity</h3>
+    <div id="add-form" class="card hidden"><h3>New Opportunity</h3>
       <div class="form-grid">
         <div><div class="label">Title</div><input id="new-title"></div><div><div class="label">Agency</div><input id="new-agency"></div>
         <div><div class="label">NAICS</div><input id="new-naics"></div><div><div class="label">Location</div><input id="new-location"></div>
         <div><div class="label">Due Date</div><input id="new-due" type="date"></div><div><div class="label">Value ($)</div><input id="new-value" type="number"></div>
         <div><div class="label">Set-Aside</div><select id="new-setaside"><option>SDVOSB</option><option>Small Business</option><option>8(a)</option><option>HUBZone</option><option>Full & Open</option></select></div>
       </div>
-      <div style="margin-bottom:10px"><div class="label">Scope</div><textarea id="new-scope" style="min-height:80px"></textarea></div>
+      <div style="margin-bottom:10px"><div class="label">Scope</div><textarea id="new-scope" style="min-height:60px"></textarea></div>
       <button class="btn btn-primary" onclick="addOpp()">Add & Score</button>
       <button class="btn btn-outline" onclick="toggleAddForm()" style="margin-left:8px">Cancel</button>
     </div>
@@ -152,9 +162,12 @@ a{color:var(--accent)}
   </div>
 
   <!-- DETAIL -->
-  <div id="page-detail" class="hidden">
-    <button class="btn btn-ghost" onclick="showPage('opportunities')" style="margin-bottom:16px">← Back</button>
-    <div id="detail-content"></div>
+  <div id="page-detail" class="hidden"><button class="btn btn-ghost" onclick="showPage('opportunities')" style="margin-bottom:16px">← Back</button><div id="detail-content"></div></div>
+
+  <!-- ANALYTICS -->
+  <div id="page-analytics" class="hidden">
+    <h2>Analytics</h2><p class="subtitle">Track your pipeline performance and win rate</p>
+    <div id="analytics-content"></div>
   </div>
 
   <!-- FIELD REPORTS -->
@@ -162,23 +175,33 @@ a{color:var(--accent)}
     <h2>Field Report Generator</h2><p class="subtitle">Type or speak your daily notes</p>
     <div class="card">
       <div class="form-group"><div class="label">Project</div><input id="fr-project"></div>
-      <div class="form-group"><div style="display:flex;justify-content:space-between"><div class="label">Notes</div><button class="btn btn-voice" onclick="voiceFR(this)" style="padding:6px 12px;font-size:11px">🎤 Speak</button></div>
+      <div class="form-group"><div style="display:flex;justify-content:space-between"><div class="label">Notes</div><button class="btn btn-voice" onclick="voiceFR(this)" style="padding:6px 10px;font-size:11px">🎤 Speak</button></div>
       <textarea id="fr-notes" placeholder="What happened today..."></textarea></div>
-      <button class="btn btn-primary" onclick="genReport()">📋 Generate Report</button>
+      <button class="btn btn-primary" onclick="genReport()">📋 Generate</button>
     </div><div id="fr-output"></div>
   </div>
 
   <!-- COMPANY -->
   <div id="page-profile" class="hidden">
-    <h2>Company Profile</h2><p class="subtitle">Powers bid scoring, SAM.gov search, and proposals</p>
-
-    <!-- Billing Section -->
+    <h2>Company Profile</h2><p class="subtitle">Powers scoring, SAM.gov, and proposals</p>
     <div id="billing-section"></div>
 
+    <!-- Theme Picker -->
+    <div class="card" style="margin-bottom:16px">
+      <h3>🎨 Dashboard Theme</h3>
+      <div class="theme-grid">
+        <div class="theme-swatch" data-t="dark-blue" style="background:linear-gradient(135deg,#0a0f1a,#3b82f6)" onclick="setTheme('dark-blue')" title="Dark Blue"></div>
+        <div class="theme-swatch" data-t="dark-green" style="background:linear-gradient(135deg,#0a1410,#22c55e)" onclick="setTheme('dark-green')" title="Dark Green"></div>
+        <div class="theme-swatch" data-t="midnight-purple" style="background:linear-gradient(135deg,#0d0a1a,#8b5cf6)" onclick="setTheme('midnight-purple')" title="Midnight Purple"></div>
+        <div class="theme-swatch" data-t="slate" style="background:linear-gradient(135deg,#0f1318,#f59e0b)" onclick="setTheme('slate')" title="Slate & Gold"></div>
+        <div class="theme-swatch" data-t="light" style="background:linear-gradient(135deg,#f5f7fa,#3b82f6)" onclick="setTheme('light')" title="Light Mode"></div>
+      </div>
+    </div>
+
     <div class="voice-box">
-      <h3 style="color:#c084fc">🎤 Voice Setup</h3>
+      <h3 style="color:var(--accent)">🎤 Voice Setup</h3>
       <p style="font-size:13px;color:var(--dim)">Describe your company — AI fills the fields</p>
-      <button class="btn btn-voice" onclick="startVoice(this)" id="voice-btn" style="font-size:15px;padding:14px 28px">🎤 Start Speaking</button>
+      <button class="btn btn-voice" onclick="startVoice(this)" style="padding:14px 28px;font-size:15px">🎤 Start Speaking</button>
       <div class="voice-transcript hidden" id="voice-transcript"></div>
       <div class="voice-results hidden" id="voice-results"></div>
     </div>
@@ -190,88 +213,89 @@ a{color:var(--accent)}
 const API=window.location.protocol==='file:'?'http://127.0.0.1:8000':window.location.origin;
 let opps=[],company={},currentOpp=null,token=localStorage.getItem('cb_token'),planInfo={};
 
-function authHeaders(){return token?{Authorization:'Bearer '+token}:{}}
-async function api(path,opts={}){
-  const h={...authHeaders(),'Content-Type':'application/json',...(opts.headers||{})};
-  const r=await fetch(API+path,{...opts,headers:h});
-  if(r.status===401){logout();throw new Error('Session expired')}
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Error '+r.status)}
-  return r.json()}
+function authH(){return token?{Authorization:'Bearer '+token}:{}}
+async function api(path,opts={}){const h={...authH(),'Content-Type':'application/json',...(opts.headers||{})};const r=await fetch(API+path,{...opts,headers:h});if(r.status===401){logout();throw new Error('Session expired')}if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Error '+r.status)}return r.json()}
+
+// Theme
+function setTheme(t){document.body.setAttribute('data-theme',t);localStorage.setItem('cb_theme',t);document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.t===t));
+  // Save to server if logged in
+  if(token&&document.getElementById('co-name')){try{api('/api/company',{method:'PUT',body:JSON.stringify({...getCurrentCompanyData(),theme:t})})}catch{}}}
+function loadTheme(){const t=localStorage.getItem('cb_theme')||'dark-blue';document.body.setAttribute('data-theme',t);document.querySelectorAll('.theme-swatch').forEach(s=>s.classList.toggle('active',s.dataset.t===t))}
+loadTheme();
 
 // Auth
 function showAuthTab(t){document.getElementById('auth-login').classList.toggle('hidden',t!=='login');document.getElementById('auth-signup').classList.toggle('hidden',t!=='signup');document.querySelectorAll('.auth-tabs button').forEach((b,i)=>b.classList.toggle('active',i===(t==='login'?0:1)))}
-async function doLogin(){document.getElementById('login-error').textContent='';try{const d=await api('/api/login',{method:'POST',body:JSON.stringify({email:v('login-email'),password:v('login-password')})});token=d.token;localStorage.setItem('cb_token',token);planInfo=d.company||{};enterApp(d)}catch(e){document.getElementById('login-error').textContent=e.message}}
+async function doLogin(){document.getElementById('login-error').textContent='';try{const d=await api('/api/login',{method:'POST',body:JSON.stringify({email:v('login-email'),password:v('login-password')})});token=d.token;localStorage.setItem('cb_token',token);planInfo=d.company||{};if(d.company&&d.company.theme)setTheme(d.company.theme);enterApp(d)}catch(e){document.getElementById('login-error').textContent=e.message}}
 async function doSignup(){document.getElementById('signup-error').textContent='';try{const d=await api('/api/signup',{method:'POST',body:JSON.stringify({email:v('signup-email'),password:v('signup-password'),company_name:v('signup-company'),name:v('signup-name')})});token=d.token;localStorage.setItem('cb_token',token);planInfo=d.company||{};enterApp(d)}catch(e){document.getElementById('signup-error').textContent=e.message}}
 function logout(){token=null;localStorage.removeItem('cb_token');location.reload()}
-function enterApp(data){
-  document.getElementById('page-auth').classList.add('hidden');
-  document.getElementById('main-nav').classList.remove('hidden');
-  document.getElementById('user-badge').classList.remove('hidden');
-  document.getElementById('logout-btn').classList.remove('hidden');
-  document.getElementById('user-badge').textContent=data.company?data.company.name:data.user.email;
-  planInfo=data.company||{};showPage('opportunities')}
+function enterApp(data){document.getElementById('page-auth').classList.add('hidden');document.getElementById('main-nav').classList.remove('hidden');document.getElementById('user-badge').classList.remove('hidden');document.getElementById('logout-btn').classList.remove('hidden');document.getElementById('user-badge').textContent=data.company?data.company.name:'';planInfo=data.company||{};if(data.company&&data.company.theme){setTheme(data.company.theme)}showPage('opportunities')}
 async function checkAuth(){if(!token)return;try{const d=await api('/api/me');enterApp(d)}catch{token=null;localStorage.removeItem('cb_token')}}
 
-// Plan Banner
-function renderPlanBanner(){
-  const el=document.getElementById('plan-banner');if(!el)return;
-  const s=planInfo.plan_status||'trial';const dl=planInfo.trial_days_left;
-  if(s==='active'){el.innerHTML='<div class="plan-banner plan-active"><div><div class="plan-text" style="color:var(--green)">✓ Pro Plan Active</div><div class="plan-sub">Full access to all features</div></div><button class="btn btn-outline" onclick="manageBilling()" style="font-size:12px">Manage Billing</button></div>'}
-  else if(s==='trial'){el.innerHTML='<div class="plan-banner plan-trial"><div><div class="plan-text" style="color:var(--yellow)">🔥 Free Trial'+(dl!==null&&dl!==undefined?' — '+dl+' days left':'')+'</div><div class="plan-sub">Upgrade to keep access after trial ends</div></div><button class="btn btn-upgrade" onclick="upgrade()">Upgrade — $299/mo</button></div>'}
-  else if(s==='expired'||s==='cancelled'){el.innerHTML='<div class="plan-banner plan-expired"><div><div class="plan-text" style="color:var(--red)">⚠ '+(s==='expired'?'Trial Expired':'Subscription Cancelled')+'</div><div class="plan-sub">Subscribe to restore access</div></div><button class="btn btn-upgrade" onclick="upgrade()">Subscribe — $299/mo</button></div>'}
-  else{el.innerHTML=''}}
-
-// Billing
-function renderBillingSection(){
-  const el=document.getElementById('billing-section');if(!el)return;
-  const s=planInfo.plan_status||'trial';
-  el.innerHTML='<div class="billing-card"><h3 style="margin-bottom:16px">💳 Billing</h3>'+
-    (s==='active'?'<div style="margin-bottom:12px"><span class="badge badge-green" style="font-size:14px;padding:6px 16px">Pro Plan — Active</span></div><p style="font-size:13px;color:var(--dim);margin-bottom:16px">$299/month · Next billing date on your Stripe portal</p><button class="btn btn-outline" onclick="manageBilling()">Manage Subscription</button>':
-    '<div class="billing-price">$299</div><div class="billing-period">per month</div><div style="margin:20px 0"><p style="color:var(--dim);font-size:13px">Everything included: SAM.gov auto-refresh, AI scoring, proposal generation, voice input, email/SMS notifications, unlimited opportunities</p></div><button class="btn btn-upgrade" onclick="upgrade()">'+
-    (s==='trial'?'Upgrade Now':'Subscribe Now')+'</button>'+
-    (s==='trial'&&planInfo.trial_days_left?'<p style="font-size:12px;color:var(--yellow);margin-top:12px">'+planInfo.trial_days_left+' days left on free trial</p>':''))+
-    '</div>'}
-
-async function upgrade(){
-  try{const d=await api('/api/create-checkout',{method:'POST'});if(d.checkout_url)window.location.href=d.checkout_url}
-  catch(e){alert('Error: '+e.message)}}
-async function manageBilling(){
-  try{const d=await api('/api/billing-portal',{method:'POST'});if(d.portal_url)window.location.href=d.portal_url}
-  catch(e){alert('Error: '+e.message)}}
-
-// Check for billing success in URL
-if(window.location.search.includes('billing=success')){
-  setTimeout(()=>{document.getElementById('sam-status').innerHTML='<div class="success-msg">🎉 Welcome to ConstructBid AI Pro! Your subscription is active.</div>';history.replaceState(null,'','/dashboard')},500)}
+// Plan
+function renderPlan(){const el=document.getElementById('plan-banner');if(!el)return;const s=planInfo.plan_status||'trial';const dl=planInfo.trial_days_left;
+  if(s==='active')el.innerHTML='<div class="plan-banner plan-active"><div><strong style="color:var(--green)">✓ Pro Plan Active</strong></div><button class="btn btn-outline" onclick="manageBilling()" style="font-size:12px">Manage Billing</button></div>';
+  else if(s==='trial')el.innerHTML='<div class="plan-banner plan-trial"><div><strong style="color:var(--yellow)">🔥 Free Trial'+(dl!=null?' — '+dl+' days left':'')+'</strong></div><button class="btn btn-upgrade" onclick="upgrade()">Upgrade $299/mo</button></div>';
+  else el.innerHTML='<div class="plan-banner plan-expired"><div><strong style="color:var(--red)">⚠ '+(s==='expired'?'Trial Expired':'Cancelled')+'</strong></div><button class="btn btn-upgrade" onclick="upgrade()">Subscribe $299/mo</button></div>'}
+function renderBilling(){const el=document.getElementById('billing-section');if(!el)return;const s=planInfo.plan_status||'trial';
+  el.innerHTML='<div class="card" style="text-align:center"><h3>💳 Billing</h3>'+(s==='active'?'<span class="badge badge-green" style="font-size:14px;padding:8px 20px">Pro — Active</span><br><button class="btn btn-outline" onclick="manageBilling()" style="margin-top:12px">Manage Subscription</button>':'<div style="font-size:36px;font-weight:800;font-family:JetBrains Mono;margin:12px 0">$299<span style="font-size:16px;color:var(--dim)">/mo</span></div><button class="btn btn-upgrade" onclick="upgrade()">'+(s==='trial'?'Upgrade Now':'Subscribe')+'</button>')+'</div>'}
+async function upgrade(){try{const d=await api('/api/create-checkout',{method:'POST'});if(d.checkout_url)window.location.href=d.checkout_url}catch(e){alert(e.message)}}
+async function manageBilling(){try{const d=await api('/api/billing-portal',{method:'POST'});if(d.portal_url)window.location.href=d.portal_url}catch(e){alert(e.message)}}
+if(window.location.search.includes('billing=success'))setTimeout(()=>{document.getElementById('sam-status').innerHTML='<div class="success-msg">🎉 Pro plan active!</div>';history.replaceState(null,'','/dashboard')},500);
 
 // Pages
-function showPage(p){
-  ['opportunities','detail','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));
-  document.getElementById('page-'+p).classList.remove('hidden');
-  document.querySelectorAll('#main-nav button').forEach(b=>b.classList.remove('active'));
-  ({opportunities:0,fieldreport:1,profile:2})[p]!==undefined&&document.querySelectorAll('#main-nav button')[({opportunities:0,fieldreport:1,profile:2})[p]].classList.add('active');
-  if(p==='opportunities'){loadOpps();renderPlanBanner()}
-  if(p==='profile'){loadCompany();renderBillingSection()}}
+function showPage(p){['opportunities','detail','analytics','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));document.getElementById('page-'+p).classList.remove('hidden');document.querySelectorAll('#main-nav button').forEach(b=>b.classList.remove('active'));({opportunities:0,analytics:1,fieldreport:2,profile:3})[p]!==undefined&&document.querySelectorAll('#main-nav button')[({opportunities:0,analytics:1,fieldreport:2,profile:3})[p]].classList.add('active');
+  if(p==='opportunities'){loadOpps();renderPlan()}if(p==='analytics')loadAnalytics();if(p==='profile'){loadCompany();renderBilling()}}
 
 // SAM
-async function refreshSAM(){const btn=document.getElementById('sam-btn'),st=document.getElementById('sam-status');btn.disabled=true;btn.textContent='⏳ Searching...';st.innerHTML='';try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});st.innerHTML='<div class="success-msg">Cleared '+d.cleared+' old. Found '+d.fetched+' — kept '+d.added+'.</div>';loadOpps()}catch(e){st.innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}btn.disabled=false;btn.textContent='🔄 Refresh SAM.gov'}
-async function clearExpired(){try{const d=await api('/api/clear-expired',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+' expired.</div>';loadOpps()}catch(e){alert(e.message)}}
-async function clearPasses(){if(!confirm('Remove all red SAM.gov?'))return;try{const d=await api('/api/clear-passes',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'.</div>';loadOpps()}catch(e){alert(e.message)}}
+async function refreshSAM(){const b=document.getElementById('sam-btn'),s=document.getElementById('sam-status');b.disabled=true;b.textContent='⏳...';s.innerHTML='';try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});s.innerHTML='<div class="success-msg">Found '+d.fetched+' — kept '+d.added+'</div>';loadOpps()}catch(e){s.innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}b.disabled=false;b.textContent='🔄 SAM.gov'}
+async function clearExp(){try{const d=await api('/api/clear-expired',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'</div>';loadOpps()}catch(e){alert(e.message)}}
+async function clearPass(){if(!confirm('Remove all red?'))return;try{const d=await api('/api/clear-passes',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'</div>';loadOpps()}catch(e){alert(e.message)}}
 
-// Opportunities
+// Opps
 async function loadOpps(){try{opps=await api('/api/opportunities');renderStats();renderList()}catch{}}
-function renderStats(){const p=opps.filter(o=>o.recommendation==='PURSUE').length,r=opps.filter(o=>o.recommendation==='REVIEW').length,s=opps.filter(o=>o.source==='sam.gov').length,vl=opps.reduce((a,o)=>a+(o.value||0),0);document.getElementById('stats-bar').innerHTML=st(opps.length,'Total','--accent')+st(p,'Pursue','--green')+st(r,'Review','--yellow')+st(s,'SAM.gov','--accent2')+st('$'+(vl/1e6).toFixed(1)+'M','Pipeline','--text')}
-function st(n,l,c){return '<div class="stat"><div class="stat-num" style="color:var('+c+')">'+n+'</div><div class="stat-label">'+l+'</div></div>'}
+function renderStats(){const p=opps.filter(o=>o.recommendation==='PURSUE').length,r=opps.filter(o=>o.recommendation==='REVIEW').length,sm=opps.filter(o=>o.source==='sam.gov').length,vl=opps.reduce((a,o)=>a+(o.value||0),0),w=opps.filter(o=>o.outcome==='won').length;
+  document.getElementById('stats-bar').innerHTML=st(opps.length,'Total','--accent')+st(p,'Pursue','--green')+st(r,'Review','--yellow')+st(sm,'SAM.gov','--accent2')+st(w,'Won','--green')+st('$'+(vl/1e6).toFixed(1)+'M','Pipeline','--text')}
+function st(n,l,c){return'<div class="stat"><div class="stat-num" style="color:var('+c+')">'+n+'</div><div class="stat-label">'+l+'</div></div>'}
 function sc(r){return r==='PURSUE'?'pursue':r==='REVIEW'?'review':'pass'}
 function bc(s){return s==='SDVOSB'?'badge-green':s==='Full & Open'?'badge-red':'badge-yellow'}
-function renderList(){document.getElementById('opp-list').innerHTML=opps.map(o=>'<div class="card card-clickable" onclick="showDetail(\''+o.id+'\')"><div class="opp-row"><div style="flex:1"><div class="opp-title">'+esc(o.title)+' <span class="source-tag '+(o.source==='sam.gov'?'source-sam':'source-manual')+'">'+(o.source==='sam.gov'?'SAM':'Manual')+'</span></div><div class="opp-agency">'+esc(o.agency||'')+'</div><div><span class="tag">'+(o.naics||'')+'</span>'+(o.location?'<span class="tag">'+o.location+'</span>':'')+(o.value?'<span class="tag">$'+(o.value/1e6).toFixed(1)+'M</span>':'')+'<span class="badge '+bc(o.set_aside||'')+'">'+(o.set_aside||'Open')+'</span>'+(o.due_date?'<span class="tag">Due '+o.due_date+'</span>':'')+'</div></div><div class="opp-right"><div><div class="score-circle score-'+sc(o.recommendation)+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+sc(o.recommendation)+')">'+o.recommendation+'</div></div></div></div></div>').join('')}
+function stc(s){return'status-'+(s||'new')}
+function renderList(){document.getElementById('opp-list').innerHTML=opps.map(o=>'<div class="card card-clickable" onclick="showDetail(\''+o.id+'\')"><div class="opp-row"><div style="flex:1"><div class="opp-title">'+esc(o.title)+' <span class="source-tag '+(o.source==='sam.gov'?'source-sam':'source-manual')+'">'+(o.source==='sam.gov'?'SAM':'Manual')+'</span>'+(o.status&&o.status!=='new'?' <span class="badge '+stc(o.status)+'" style="font-size:10px;padding:2px 8px;border:1px solid currentColor;border-radius:10px">'+o.status.toUpperCase()+'</span>':'')+'</div><div class="opp-agency">'+esc(o.agency||'')+'</div><div><span class="tag">'+(o.naics||'')+'</span>'+(o.location?'<span class="tag">'+o.location+'</span>':'')+(o.value?'<span class="tag">$'+(o.value/1e6).toFixed(1)+'M</span>':'')+'<span class="badge '+bc(o.set_aside||'')+'">'+(o.set_aside||'Open')+'</span>'+(o.due_date?'<span class="tag">Due '+o.due_date+'</span>':'')+'</div></div><div class="opp-right"><div><div class="score-circle score-'+sc(o.recommendation)+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+sc(o.recommendation)+')">'+o.recommendation+'</div></div></div></div></div>').join('')}
 function toggleAddForm(){document.getElementById('add-form').classList.toggle('hidden')}
 async function addOpp(){const b={title:v('new-title'),agency:v('new-agency'),naics:v('new-naics'),location:v('new-location'),due_date:v('new-due'),value:parseInt(v('new-value'))||0,set_aside:v('new-setaside'),scope:v('new-scope')};if(!b.title||!b.scope)return alert('Title and scope required');try{await api('/api/opportunities',{method:'POST',body:JSON.stringify(b)});toggleAddForm();loadOpps()}catch(e){alert(e.message)}}
 
-// Detail
-async function showDetail(id){currentOpp=opps.find(o=>o.id===id);if(!currentOpp)return;['opportunities','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));document.getElementById('page-detail').classList.remove('hidden');const o=currentOpp,s=sc(o.recommendation);let proj=[];try{proj=await api('/api/projects')}catch{}
-document.getElementById('detail-content').innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h2 style="margin-bottom:8px">'+esc(o.title)+'</h2><div style="font-size:14px;color:var(--dim)">'+esc(o.agency||'')+'</div>'+(o.sam_link?'<a href="'+o.sam_link+'" target="_blank" style="font-size:12px">SAM.gov →</a>':'')+'</div><div><div class="score-circle score-lg score-'+s+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div class="detail-grid">'+di('NAICS',o.naics)+di('Location',o.location)+di('Value',o.value?'$'+(o.value/1e6).toFixed(1)+'M':'TBD')+di('Set-Aside',o.set_aside||'Open')+di('Due',o.due_date||'TBD')+'<div class="detail-item"><div class="label">Action</div><div class="detail-value" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div style="margin-bottom:20px"><div class="label">Scope</div><p style="font-size:14px;line-height:1.7;margin-top:6px">'+esc(o.scope||'None')+'</p></div><div style="margin-bottom:20px"><div class="label">Fit Analysis</div>'+(o.reasons||[]).map(r=>'<div class="reason">'+esc(r)+'</div>').join('')+'</div><div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><button class="btn btn-danger" onclick="delOpp(\''+o.id+'\')" style="font-size:12px;padding:6px 12px">🗑 Remove</button></div></div><div class="card" style="margin-top:12px"><h3>Proposal Sections</h3><div class="section-btns"><button class="btn btn-outline" onclick="genProp(\'executive\')">📄 Executive</button><button class="btn btn-outline" onclick="genProp(\'technical\')">🔧 Technical</button><button class="btn btn-outline" onclick="genProp(\'pastPerformance\')">📊 Past Perf</button><button class="btn btn-outline" onclick="genProp(\'staffing\')">👷 Staffing</button><button class="btn btn-outline" onclick="genProp(\'compliance\')">✅ Compliance</button></div><div id="proposal-output"></div></div>'}
+// Detail with tracking
+async function showDetail(id){currentOpp=opps.find(o=>o.id===id);if(!currentOpp)return;['opportunities','analytics','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));document.getElementById('page-detail').classList.remove('hidden');const o=currentOpp,s=sc(o.recommendation);let proj=[];try{proj=await api('/api/projects')}catch{}
+  document.getElementById('detail-content').innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h2 style="margin-bottom:8px">'+esc(o.title)+'</h2><div style="font-size:14px;color:var(--dim)">'+esc(o.agency||'')+'</div>'+(o.sam_link?'<a href="'+o.sam_link+'" target="_blank" style="font-size:12px">SAM.gov →</a>':'')+'</div><div><div class="score-circle score-lg score-'+s+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div>'+
+  '<div class="detail-grid">'+di('NAICS',o.naics)+di('Location',o.location)+di('Value',o.value?'$'+(o.value/1e6).toFixed(1)+'M':'TBD')+di('Set-Aside',o.set_aside||'Open')+di('Due',o.due_date||'TBD')+'<div class="detail-item"><div class="label">Action</div><div class="detail-value" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div>'+
+  // Tracking section
+  '<div class="card" style="border-color:var(--accent);margin:-8px 0 16px;padding:16px"><h3>📊 Bid Tracking</h3><div class="form-grid"><div><div class="label">Status</div><select id="opp-status" onchange="updateOpp()" style="font-size:14px"><option value="new"'+(o.status==='new'?' selected':'')+'>New</option><option value="pursuing"'+(o.status==='pursuing'?' selected':'')+'>Pursuing</option><option value="submitted"'+(o.status==='submitted'?' selected':'')+'>Submitted</option><option value="won"'+(o.status==='won'?' selected':'')+'>Won ✓</option><option value="lost"'+(o.status==='lost'?' selected':'')+'>Lost</option><option value="passed"'+(o.status==='passed'?' selected':'')+'>Passed / No-Bid</option></select></div><div><div class="label">Outcome Value ($)</div><input id="opp-outcome-value" type="number" value="'+(o.outcome_value||'')+'" onchange="updateOpp()" placeholder="Actual award amount"></div></div><div><div class="label">Notes</div><textarea id="opp-notes" onchange="updateOpp()" style="min-height:60px" placeholder="Strategy notes, contacts, follow-up items...">'+(o.notes||'')+'</textarea></div><span id="track-msg" style="font-size:12px;color:var(--green)"></span></div>'+
+  '<div style="margin-bottom:20px"><div class="label">Scope</div><p style="font-size:14px;line-height:1.7;margin-top:6px">'+esc(o.scope||'None')+'</p></div>'+
+  '<div style="margin-bottom:20px"><div class="label">Fit Analysis</div>'+(o.reasons||[]).map(r=>'<div class="reason">'+esc(r)+'</div>').join('')+'</div>'+
+  '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><button class="btn btn-danger" onclick="delOpp(\''+o.id+'\')" style="font-size:12px;padding:6px 12px">🗑 Remove</button></div></div>'+
+  '<div class="card" style="margin-top:12px"><h3>Proposal Sections</h3><div class="section-btns"><button class="btn btn-outline" onclick="genProp(\'executive\')">📄 Executive</button><button class="btn btn-outline" onclick="genProp(\'technical\')">🔧 Technical</button><button class="btn btn-outline" onclick="genProp(\'pastPerformance\')">📊 Past Perf</button><button class="btn btn-outline" onclick="genProp(\'staffing\')">👷 Staffing</button><button class="btn btn-outline" onclick="genProp(\'compliance\')">✅ Compliance</button></div><div id="proposal-output"></div></div>'}
+
+async function updateOpp(){if(!currentOpp)return;const d={status:v('opp-status'),notes:v('opp-notes'),outcome:v('opp-status')==='won'?'won':v('opp-status')==='lost'?'lost':'',outcome_value:parseFloat(v('opp-outcome-value'))||0};try{await api('/api/opportunities/'+currentOpp.id,{method:'PUT',body:JSON.stringify(d)});currentOpp.status=d.status;currentOpp.notes=d.notes;currentOpp.outcome=d.outcome;currentOpp.outcome_value=d.outcome_value;document.getElementById('track-msg').textContent='✓ Saved';setTimeout(()=>document.getElementById('track-msg').textContent='',2000)}catch(e){alert(e.message)}}
 async function delOpp(id){if(!confirm('Remove?'))return;try{await api('/api/opportunities/'+id,{method:'DELETE'});showPage('opportunities')}catch(e){alert(e.message)}}
 async function genProp(s){if(!currentOpp)return;document.getElementById('proposal-output').innerHTML='<div style="text-align:center;padding:20px;color:var(--dim)">Generating...</div>';try{const d=await api('/api/proposal',{method:'POST',body:JSON.stringify({section:s,opportunity_id:currentOpp.id})});document.getElementById('proposal-output').innerHTML='<pre class="output"><button class="copy-btn" onclick="copyText(this)">📋 Copy</button>'+esc(d.content)+'</pre>'}catch{document.getElementById('proposal-output').innerHTML='<div class="error-msg">Failed</div>'}}
+
+// Analytics
+async function loadAnalytics(){try{const d=await api('/api/analytics');renderAnalytics(d)}catch(e){document.getElementById('analytics-content').innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}}
+function renderAnalytics(d){
+  const wr=d.win_rate||0;const wrColor=wr>=50?'var(--green)':wr>=25?'var(--yellow)':'var(--red)';
+  document.getElementById('analytics-content').innerHTML=
+  '<div class="analytics-grid">'+
+  '<div class="analytics-card"><div class="stat-num" style="color:var(--accent)">'+d.total+'</div><div class="stat-label">Total Opportunities</div></div>'+
+  '<div class="analytics-card"><div class="stat-num" style="color:var(--green)">'+d.pursue+'</div><div class="stat-label">Worth Pursuing</div></div>'+
+  '<div class="analytics-card"><div class="stat-num" style="color:'+wrColor+'">'+wr+'%</div><div class="stat-label">Win Rate</div></div>'+
+  '<div class="analytics-card"><div class="stat-num" style="color:var(--green)">$'+(d.won_value/1e6).toFixed(1)+'M</div><div class="stat-label">Total Won Value</div></div>'+
+  '<div class="analytics-card"><div class="stat-num" style="color:var(--text)">$'+(d.total_pipeline_value/1e6).toFixed(1)+'M</div><div class="stat-label">Pipeline Value</div></div>'+
+  '<div class="analytics-card"><div class="stat-num" style="color:var(--accent2)">'+d.submitted+'</div><div class="stat-label">Submitted Bids</div></div>'+
+  '</div>'+
+  '<div class="card" style="margin-top:20px"><h3>Pipeline by Status</h3><div class="bar-chart" id="status-chart"></div><div style="height:30px"></div></div>'+
+  '<div class="card" style="margin-top:12px"><h3>Win / Loss</h3><div style="display:flex;gap:24px;align-items:center;padding:16px 0"><div style="text-align:center;flex:1"><div style="font-size:48px;font-weight:800;font-family:JetBrains Mono;color:var(--green)">'+d.won+'</div><div style="color:var(--dim);font-size:13px">Won</div></div><div style="text-align:center;flex:1"><div style="font-size:48px;font-weight:800;font-family:JetBrains Mono;color:var(--red)">'+d.lost+'</div><div style="color:var(--dim);font-size:13px">Lost</div></div><div style="text-align:center;flex:1"><div style="font-size:48px;font-weight:800;font-family:JetBrains Mono;color:'+wrColor+'">'+wr+'%</div><div style="color:var(--dim);font-size:13px">Win Rate</div></div></div></div>';
+  // Bar chart
+  const bs=d.by_status||{};const mx=Math.max(...Object.values(bs),1);const colors={new:'var(--accent)',pursuing:'var(--yellow)',submitted:'#a78bfa',won:'var(--green)',lost:'var(--red)',passed:'var(--dim)'};
+  const chart=document.getElementById('status-chart');if(chart){chart.innerHTML=Object.entries(bs).map(([k,v])=>'<div class="bar" style="height:'+Math.max(4,v/mx*100)+'%;background:'+( colors[k]||'var(--dim)')+'"><div class="bar-value" style="color:'+(colors[k]||'var(--dim)')+'">'+v+'</div><div class="bar-label">'+k+'</div></div>').join('')}}
 
 // Field Reports
 async function genReport(){const p=v('fr-project'),n=v('fr-notes');if(!n)return alert('Enter notes');try{const d=await api('/api/field-report',{method:'POST',body:JSON.stringify({project_name:p||'Unnamed',notes:n})});document.getElementById('fr-output').innerHTML='<div class="card" style="margin-top:12px"><pre class="output"><button class="copy-btn" onclick="copyText(this)">📋 Copy</button>'+esc(d.report)+'</pre></div>'}catch{}}
@@ -285,28 +309,29 @@ async function applyVoice(){const p=window._vp;if(!p)return;if(p.name&&document.
 function voiceFR(btn){if(vrec){vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak';return}const r=getSR();if(!r)return;vrec=r;btn.classList.add('recording');btn.textContent='⏹ Stop';const ta=document.getElementById('fr-notes');let ex=ta.value;r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';ta.value=ex+t};r.onerror=r.onend=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak'};r.start()}
 
 // Company
+function getCurrentCompanyData(){return{name:v('co-name'),services:csv('co-services'),certifications:csv('co-certs'),naics:csv('co-naics'),bonding_capacity:parseInt(v('co-bonding'))||0,regions:csv('co-regions').map(s=>s.toUpperCase()),sam_api_key:v('co-samkey').trim(),notify_email:v('co-notify-email').trim(),notify_phone:v('co-notify-phone').trim(),notify_enabled:document.getElementById('co-notify-on').checked,notify_min_score:parseInt(v('co-notify-score'))||75,theme:document.body.getAttribute('data-theme')||'dark-blue'}}
 async function loadCompany(){
   try{company=await api('/api/company')}catch{return}
-  planInfo=company;
+  planInfo=company;if(company.theme)setTheme(company.theme);
   document.getElementById('company-form').innerHTML=
-    fg('Company Name','co-name',company.name)+fg('Services (comma-separated)','co-services',(company.services||[]).join(', '))+
+    fg('Company Name','co-name',company.name)+fg('Services','co-services',(company.services||[]).join(', '))+
     fg('Certifications','co-certs',(company.certifications||[]).join(', '))+fg('NAICS Codes','co-naics',(company.naics||[]).join(', '))+
-    fg('Bonding Capacity ($)','co-bonding',company.bonding_capacity||0,'number')+fg('Regions (state codes)','co-regions',(company.regions||[]).join(', '))+
-    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px"><div class="label">🔑 SAM.gov API Key</div><input id="co-samkey" type="password" value="'+esc(company.sam_api_key||'')+'" placeholder="Paste key"><div class="info-box">Free from <a href="https://sam.gov" target="_blank">sam.gov</a> → Profile → Public API Key<br>'+(company.sam_api_key_set?'<span style="color:var(--green)">✓ Set</span>':'<span style="color:var(--yellow)">⚠ Not set</span>')+'</div></div>'+
-    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px"><h3 style="color:#c084fc">🔔 Notifications</h3><label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="co-notify-on" '+(company.notify_enabled?'checked':'')+' style="width:18px;height:18px;accent-color:var(--green)"> Enable</label><div class="form-grid"><div><div class="label">📧 Email</div><input id="co-notify-email" type="email" value="'+esc(company.notify_email||'')+'"></div><div><div class="label">📱 Phone</div><input id="co-notify-phone" type="tel" value="'+esc(company.notify_phone||'')+'"></div></div><div class="label">Min Score</div><select id="co-notify-score"><option value="75"'+(String(company.notify_min_score||75)==='75'?' selected':'')+'>75+ (PURSUE)</option><option value="55"'+(String(company.notify_min_score)==='55'?' selected':'')+'>55+</option><option value="85"'+(String(company.notify_min_score)==='85'?' selected':'')+'>85+</option></select><button class="btn btn-outline" onclick="testNotify()" style="margin-top:10px;font-size:12px">🔔 Test</button><span id="notify-msg" style="margin-left:10px;font-size:12px"></span></div>'+
+    fg('Bonding Capacity ($)','co-bonding',company.bonding_capacity||0,'number')+fg('Regions','co-regions',(company.regions||[]).join(', '))+
+    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px"><div class="label">🔑 SAM.gov API Key</div><input id="co-samkey" type="password" value="'+esc(company.sam_api_key||'')+'"><div class="info-box">Free: <a href="https://sam.gov" target="_blank">sam.gov</a> → Profile → Public API Key '+(company.sam_api_key_set?'<span style="color:var(--green)">✓ Set</span>':'<span style="color:var(--yellow)">⚠ Not set</span>')+'</div></div>'+
+    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px"><h3>🔔 Notifications</h3><label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="co-notify-on" '+(company.notify_enabled?'checked':'')+' style="width:18px;height:18px;accent-color:var(--green)"> Enable</label><div class="form-grid"><div><div class="label">Email</div><input id="co-notify-email" type="email" value="'+esc(company.notify_email||'')+'"></div><div><div class="label">Phone</div><input id="co-notify-phone" type="tel" value="'+esc(company.notify_phone||'')+'"></div></div><div class="label">Min Score</div><select id="co-notify-score"><option value="75"'+(String(company.notify_min_score||75)==='75'?' selected':'')+'>75+</option><option value="55"'+(String(company.notify_min_score)==='55'?' selected':'')+'>55+</option><option value="85"'+(String(company.notify_min_score)==='85'?' selected':'')+'>85+</option></select><button class="btn btn-outline" onclick="testNotify()" style="margin-top:10px;font-size:12px">🔔 Test</button><span id="notify-msg" style="margin-left:8px;font-size:12px"></span></div>'+
     '<button class="btn btn-primary" onclick="saveCompany()" style="margin-top:12px">💾 Save</button> <span id="save-msg" style="margin-left:12px;font-size:13px;color:var(--green)"></span>';
   let proj=[];try{proj=await api('/api/projects')}catch{}
-  document.getElementById('projects-content').innerHTML=proj.map(p=>'<div class="past-project"><div class="name">'+esc(p.name)+'</div><div class="meta">'+esc(p.client)+' · $'+((p.value||0)/1e6).toFixed(1)+'M · '+p.year+'</div></div>').join('')||'<p style="color:var(--dim);font-size:13px">No projects yet</p>';
-  renderBillingSection()}
-async function saveCompany(){const b={name:v('co-name'),services:csv('co-services'),certifications:csv('co-certs'),naics:csv('co-naics'),bonding_capacity:parseInt(v('co-bonding'))||0,regions:csv('co-regions').map(s=>s.toUpperCase()),sam_api_key:v('co-samkey').trim(),notify_email:v('co-notify-email').trim(),notify_phone:v('co-notify-phone').trim(),notify_enabled:document.getElementById('co-notify-on').checked,notify_min_score:parseInt(v('co-notify-score'))||75};try{await api('/api/company',{method:'PUT',body:JSON.stringify(b)});const m=document.getElementById('save-msg');m.textContent='✓ Saved';setTimeout(()=>{m.textContent='';loadCompany()},1500);document.getElementById('user-badge').textContent=b.name}catch(e){alert(e.message)}}
-async function testNotify(){const m=document.getElementById('notify-msg');m.textContent='⏳...';try{const d=await api('/api/test-notification',{method:'POST'});m.textContent='✓ Sent';m.style.color='var(--green)'}catch(e){m.textContent=e.message;m.style.color='var(--red)'}setTimeout(()=>m.textContent='',5000)}
+  document.getElementById('projects-content').innerHTML=proj.map(p=>'<div class="past-project"><div style="font-weight:600">'+esc(p.name)+'</div><div class="meta" style="font-size:12px;color:var(--dim);margin-top:4px">'+esc(p.client)+' · $'+((p.value||0)/1e6).toFixed(1)+'M · '+p.year+'</div></div>').join('')||'<p style="color:var(--dim);font-size:13px">No projects yet</p>';
+  renderBilling()}
+async function saveCompany(){const b=getCurrentCompanyData();try{await api('/api/company',{method:'PUT',body:JSON.stringify(b)});const m=document.getElementById('save-msg');m.textContent='✓ Saved';setTimeout(()=>{m.textContent='';loadCompany()},1500);document.getElementById('user-badge').textContent=b.name}catch(e){alert(e.message)}}
+async function testNotify(){const m=document.getElementById('notify-msg');m.textContent='⏳';try{await api('/api/test-notification',{method:'POST'});m.textContent='✓ Sent';m.style.color='var(--green)'}catch(e){m.textContent=e.message;m.style.color='var(--red)'}setTimeout(()=>m.textContent='',4000)}
 
 // Helpers
 function v(id){return document.getElementById(id).value}
 function csv(id){return v(id).split(',').map(s=>s.trim()).filter(Boolean)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
-function di(l,v){return '<div class="detail-item"><div class="label">'+l+'</div><div class="detail-value">'+esc(v||'N/A')+'</div></div>'}
-function fg(l,id,v,t){return '<div class="form-group"><div class="label">'+l+'</div><input id="'+id+'"'+(t?' type="'+t+'"':'')+' value="'+esc(v)+'"></div>'}
+function di(l,v){return'<div class="detail-item"><div class="label">'+l+'</div><div class="detail-value">'+esc(v||'N/A')+'</div></div>'}
+function fg(l,id,v,t){return'<div class="form-group"><div class="label">'+l+'</div><input id="'+id+'"'+(t?' type="'+t+'"':'')+' value="'+esc(v)+'"></div>'}
 function copyText(b){navigator.clipboard.writeText(b.parentElement.textContent.replace('📋 Copy','').trim());b.textContent='✓';setTimeout(()=>b.textContent='📋 Copy',1500)}
 
 setInterval(()=>{if(!document.getElementById('page-opportunities').classList.contains('hidden'))loadOpps()},300000);

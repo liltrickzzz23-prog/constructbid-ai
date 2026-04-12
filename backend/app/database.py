@@ -1,4 +1,4 @@
-"""Database models for ConstructBid AI v6 with billing."""
+"""Database models for ConstructBid AI v7."""
 import os
 from sqlalchemy import create_engine, Column, String, Float, Integer, Boolean, Text, DateTime, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -37,11 +37,11 @@ class Company(Base):
     notify_phone = Column(String, default="")
     notify_enabled = Column(Boolean, default=False)
     notify_min_score = Column(Integer, default=75)
-    # Billing
     stripe_customer_id = Column(String, default="")
     stripe_subscription_id = Column(String, default="")
-    plan_status = Column(String, default="trial")  # trial, active, cancelled, expired
+    plan_status = Column(String, default="trial")
     trial_ends_at = Column(DateTime, nullable=True)
+    theme = Column(String, default="dark-blue")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -57,8 +57,11 @@ class Opportunity(Base):
     value = Column(Float, default=0)
     set_aside = Column(String, default="")
     scope = Column(Text, default="")
-    status = Column(String, default="new")
+    status = Column(String, default="new")  # new, pursuing, submitted, won, lost, passed
     source = Column(String, default="manual")
+    notes = Column(Text, default="")
+    outcome = Column(String, default="")  # won, lost, no-bid, pending
+    outcome_value = Column(Float, default=0)  # actual award value
     sam_notice_id = Column(String, nullable=True)
     sam_sol_number = Column(String, default="")
     sam_posted_date = Column(String, default="")
