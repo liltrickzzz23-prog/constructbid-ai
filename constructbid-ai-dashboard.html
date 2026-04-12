@@ -211,7 +211,7 @@ async function doLogin(){
   document.getElementById('login-error').textContent='';
   try{
     const d=await api('/api/login',{method:'POST',body:JSON.stringify({email:v('login-email'),password:v('login-password')})});
-    token=d.token;localStorage.setItem('cb_token',token);location.reload();
+    token=d.token;localStorage.setItem('cb_token',token);window.location.href='/dashboard';
   }catch(e){document.getElementById('login-error').textContent=e.message}
 }
 
@@ -219,25 +219,28 @@ async function doSignup(){
   document.getElementById('signup-error').textContent='';
   try{
     const d=await api('/api/signup',{method:'POST',body:JSON.stringify({email:v('signup-email'),password:v('signup-password'),company_name:v('signup-company'),name:v('signup-name')})});
-    token=d.token;localStorage.setItem('cb_token',token);location.reload();
+    token=d.token;localStorage.setItem('cb_token',token);window.location.href='/dashboard';
   }catch(e){document.getElementById('signup-error').textContent=e.message}
 }
 
 function logout(){token=null;localStorage.removeItem('cb_token');location.reload()}
 
 function enterApp(data){
+  console.log('enterApp called with:', data);
   document.getElementById('page-auth').classList.add('hidden');
   document.getElementById('main-nav').classList.remove('hidden');
   document.getElementById('user-badge').classList.remove('hidden');
   document.getElementById('logout-btn').classList.remove('hidden');
   document.getElementById('user-badge').textContent=data.company?data.company.name:data.user.email;
   showPage('opportunities');
+  console.log('enterApp complete');
 }
 
 async function checkAuth(){
-  if(!token)return;
-  try{const d=await api('/api/me');enterApp(d)}
-  catch{token=null;localStorage.removeItem('cb_token')}
+  if(!token){console.log('No token found');return}
+  console.log('Token found, checking auth...');
+  try{const d=await api('/api/me');console.log('Auth OK:',d);enterApp(d)}
+  catch(e){console.log('Auth failed:',e);token=null;localStorage.removeItem('cb_token')}
 }
 
 // ── Pages ──
