@@ -7,12 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0a0f1a;--surface:#111827;--surface2:#1a2332;--border:#1e2d3d;--accent:#3b82f6;--accent2:#06b6d4;--text:#e2e8f0;--dim:#64748b;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .logo{display:flex;align-items:center;gap:10px}.logo-text{font-size:18px;font-weight:700}.logo-sub{font-size:11px;color:var(--accent2);font-weight:500;letter-spacing:1.5px;text-transform:uppercase}
 .header-right{display:flex;align-items:center;gap:12px}
-.user-badge{font-size:12px;color:var(--dim);background:var(--surface2);padding:6px 12px;border-radius:8px}
 nav{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px}
 nav button{padding:8px 16px;border-radius:8px;border:none;background:transparent;color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit';transition:all .2s}
 nav button.active{background:var(--accent);color:#fff}
@@ -39,9 +37,10 @@ h2{font-size:22px;font-weight:700;margin-bottom:4px}h3{font-size:16px;font-weigh
 .btn{padding:10px 18px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit';display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn-primary{background:var(--accent);color:#fff}.btn-sam{background:linear-gradient(135deg,#059669,#06b6d4);color:#fff}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost{background:transparent;color:var(--dim);border:none}
-.btn-danger{background:var(--red);color:#fff}.btn:hover{opacity:.85}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-danger{background:var(--red);color:#fff}.btn-upgrade{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:14px;padding:12px 24px}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-voice{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff}
-.btn-voice.recording{background:linear-gradient(135deg,#ef4444,#f59e0b);animation:pulse 1s infinite}
+.btn-voice.recording{animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.7}}
 .label{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
 input,select,textarea{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:'Outfit';outline:none}
@@ -61,24 +60,27 @@ pre.output{position:relative;background:var(--surface2);border-radius:10px;paddi
 .info-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--dim);line-height:1.6;margin-top:8px}
 a{color:var(--accent)}
 .auto-refresh-bar{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim)}
-.auto-refresh-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
-.dot-active{background:var(--green);animation:pulse 2s infinite}.dot-idle{background:var(--dim)}
+.auto-refresh-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}.dot-active{background:var(--green)}.dot-idle{background:var(--dim)}
 .voice-box{background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(236,72,153,.1));border:1px solid rgba(139,92,246,.25);border-radius:12px;padding:20px;margin-bottom:16px;text-align:center}
 .voice-transcript{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:13px;min-height:60px;text-align:left;font-style:italic}
 .voice-results{background:var(--surface);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:12px;margin-top:12px;text-align:left;font-size:13px}
-/* Auth styles */
 .auth-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 70px);padding:20px}
 .auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;width:100%;max-width:420px}
-.auth-card h2{text-align:center;margin-bottom:8px;font-size:26px}
-.auth-card .subtitle{text-align:center;margin-bottom:24px}
+.auth-card h2{text-align:center;margin-bottom:8px;font-size:26px}.auth-card .subtitle{text-align:center;margin-bottom:24px}
 .auth-tabs{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:24px}
 .auth-tabs button{flex:1;padding:10px;border-radius:8px;border:none;background:transparent;color:var(--dim);font-size:14px;font-weight:600;cursor:pointer;font-family:'Outfit'}
 .auth-tabs button.active{background:var(--accent);color:#fff}
 .auth-error{color:var(--red);font-size:13px;margin-top:8px;text-align:center}
+.plan-banner{border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.plan-trial{background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(239,68,68,.1));border:1px solid rgba(245,158,11,.25)}
+.plan-active{background:linear-gradient(135deg,rgba(34,197,94,.15),rgba(6,182,212,.1));border:1px solid rgba(34,197,94,.25)}
+.plan-expired{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25)}
+.plan-text{font-size:14px;font-weight:600}.plan-sub{font-size:12px;color:var(--dim);margin-top:2px}
+.billing-card{background:linear-gradient(135deg,rgba(59,130,246,.1),rgba(139,92,246,.1));border:1px solid rgba(59,130,246,.25);border-radius:12px;padding:24px;margin-bottom:16px;text-align:center}
+.billing-price{font-size:42px;font-weight:700;font-family:'JetBrains Mono';color:var(--text)}.billing-period{font-size:14px;color:var(--dim)}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/></svg>
@@ -90,21 +92,17 @@ a{color:var(--accent)}
       <button onclick="showPage('fieldreport')">Field Reports</button>
       <button onclick="showPage('profile')">Company</button>
     </nav>
-    <span class="user-badge hidden" id="user-badge"></span>
+    <span class="hidden" id="user-badge" style="font-size:12px;color:var(--dim);background:var(--surface2);padding:6px 12px;border-radius:8px"></span>
     <button class="btn btn-ghost hidden" id="logout-btn" onclick="logout()" style="font-size:12px">Logout</button>
   </div>
 </header>
-
 <main>
-  <!-- AUTH PAGE -->
+  <!-- AUTH -->
   <div id="page-auth" class="auth-page">
     <div class="auth-card">
       <h2>ConstructBid AI</h2>
       <p class="subtitle">AI-powered government contracting platform</p>
-      <div class="auth-tabs">
-        <button class="active" onclick="showAuthTab('login')">Log In</button>
-        <button onclick="showAuthTab('signup')">Sign Up</button>
-      </div>
+      <div class="auth-tabs"><button class="active" onclick="showAuthTab('login')">Log In</button><button onclick="showAuthTab('signup')">Sign Up</button></div>
       <div id="auth-login">
         <div class="form-group"><div class="label">Email</div><input id="login-email" type="email" placeholder="you@company.com"></div>
         <div class="form-group"><div class="label">Password</div><input id="login-password" type="password" placeholder="••••••••"></div>
@@ -115,8 +113,9 @@ a{color:var(--accent)}
         <div class="form-group"><div class="label">Company Name</div><input id="signup-company" placeholder="e.g. KMC Solutions"></div>
         <div class="form-group"><div class="label">Your Name</div><input id="signup-name" placeholder="e.g. Kevin"></div>
         <div class="form-group"><div class="label">Email</div><input id="signup-email" type="email" placeholder="you@company.com"></div>
-        <div class="form-group"><div class="label">Password (6+ characters)</div><input id="signup-password" type="password" placeholder="••••••••"></div>
-        <button class="btn btn-primary" onclick="doSignup()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Create Account</button>
+        <div class="form-group"><div class="label">Password (6+)</div><input id="signup-password" type="password" placeholder="••••••••"></div>
+        <button class="btn btn-primary" onclick="doSignup()" style="width:100%;justify-content:center;padding:12px;font-size:15px">Start Free 14-Day Trial</button>
+        <p style="text-align:center;font-size:12px;color:var(--dim);margin-top:12px">No credit card required. $299/mo after trial.</p>
         <div class="auth-error" id="signup-error"></div>
       </div>
     </div>
@@ -124,6 +123,7 @@ a{color:var(--accent)}
 
   <!-- OPPORTUNITIES -->
   <div id="page-opportunities" class="hidden">
+    <div id="plan-banner"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div><h2>Opportunities</h2><p class="subtitle" style="margin-bottom:0">Score, evaluate, and pursue the right bids</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -139,15 +139,12 @@ a{color:var(--accent)}
     <div id="add-form" class="card hidden" style="border-color:rgba(59,130,246,.3)">
       <h3>New Opportunity</h3>
       <div class="form-grid">
-        <div><div class="label">Title</div><input id="new-title" placeholder="e.g. Building Renovation"></div>
-        <div><div class="label">Agency</div><input id="new-agency" placeholder="e.g. Dept of Veterans Affairs"></div>
-        <div><div class="label">NAICS</div><input id="new-naics" placeholder="e.g. 236220"></div>
-        <div><div class="label">Location</div><input id="new-location" placeholder="e.g. VA"></div>
-        <div><div class="label">Due Date</div><input id="new-due" type="date"></div>
-        <div><div class="label">Value ($)</div><input id="new-value" type="number" placeholder="e.g. 2000000"></div>
+        <div><div class="label">Title</div><input id="new-title"></div><div><div class="label">Agency</div><input id="new-agency"></div>
+        <div><div class="label">NAICS</div><input id="new-naics"></div><div><div class="label">Location</div><input id="new-location"></div>
+        <div><div class="label">Due Date</div><input id="new-due" type="date"></div><div><div class="label">Value ($)</div><input id="new-value" type="number"></div>
         <div><div class="label">Set-Aside</div><select id="new-setaside"><option>SDVOSB</option><option>Small Business</option><option>8(a)</option><option>HUBZone</option><option>Full & Open</option></select></div>
       </div>
-      <div style="margin-bottom:10px"><div class="label">Scope</div><textarea id="new-scope" placeholder="Paste scope..." style="min-height:80px"></textarea></div>
+      <div style="margin-bottom:10px"><div class="label">Scope</div><textarea id="new-scope" style="min-height:80px"></textarea></div>
       <button class="btn btn-primary" onclick="addOpp()">Add & Score</button>
       <button class="btn btn-outline" onclick="toggleAddForm()" style="margin-left:8px">Cancel</button>
     </div>
@@ -164,7 +161,7 @@ a{color:var(--accent)}
   <div id="page-fieldreport" class="hidden">
     <h2>Field Report Generator</h2><p class="subtitle">Type or speak your daily notes</p>
     <div class="card">
-      <div class="form-group"><div class="label">Project</div><input id="fr-project" placeholder="e.g. Cemetery Expansion Phase II"></div>
+      <div class="form-group"><div class="label">Project</div><input id="fr-project"></div>
       <div class="form-group"><div style="display:flex;justify-content:space-between"><div class="label">Notes</div><button class="btn btn-voice" onclick="voiceFR(this)" style="padding:6px 12px;font-size:11px">🎤 Speak</button></div>
       <textarea id="fr-notes" placeholder="What happened today..."></textarea></div>
       <button class="btn btn-primary" onclick="genReport()">📋 Generate Report</button>
@@ -174,9 +171,13 @@ a{color:var(--accent)}
   <!-- COMPANY -->
   <div id="page-profile" class="hidden">
     <h2>Company Profile</h2><p class="subtitle">Powers bid scoring, SAM.gov search, and proposals</p>
+
+    <!-- Billing Section -->
+    <div id="billing-section"></div>
+
     <div class="voice-box">
       <h3 style="color:#c084fc">🎤 Voice Setup</h3>
-      <p style="font-size:13px;color:var(--dim)">Describe your company — AI fills the fields for you</p>
+      <p style="font-size:13px;color:var(--dim)">Describe your company — AI fills the fields</p>
       <button class="btn btn-voice" onclick="startVoice(this)" id="voice-btn" style="font-size:15px;padding:14px 28px">🎤 Start Speaking</button>
       <div class="voice-transcript hidden" id="voice-transcript"></div>
       <div class="voice-results hidden" id="voice-results"></div>
@@ -185,173 +186,122 @@ a{color:var(--accent)}
     <div class="card" style="margin-top:12px"><h3>Past Projects</h3><div id="projects-content"></div></div>
   </div>
 </main>
-
 <script>
-const API = window.location.protocol === 'file:' ? 'http://127.0.0.1:8000' : window.location.origin;
-let opps=[],company={},currentOpp=null,token=localStorage.getItem('cb_token');
+const API=window.location.protocol==='file:'?'http://127.0.0.1:8000':window.location.origin;
+let opps=[],company={},currentOpp=null,token=localStorage.getItem('cb_token'),planInfo={};
 
 function authHeaders(){return token?{Authorization:'Bearer '+token}:{}}
-
 async function api(path,opts={}){
   const h={...authHeaders(),'Content-Type':'application/json',...(opts.headers||{})};
   const r=await fetch(API+path,{...opts,headers:h});
   if(r.status===401){logout();throw new Error('Session expired')}
   if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail||'Error '+r.status)}
-  return r.json();
-}
+  return r.json()}
 
-// ── Auth ──
-function showAuthTab(tab){
-  document.getElementById('auth-login').classList.toggle('hidden',tab!=='login');
-  document.getElementById('auth-signup').classList.toggle('hidden',tab!=='signup');
-  document.querySelectorAll('.auth-tabs button').forEach((b,i)=>b.classList.toggle('active',i===(tab==='login'?0:1)));
-}
-
-async function doLogin(){
-  document.getElementById('login-error').textContent='';
-  try{
-    const d=await api('/api/login',{method:'POST',body:JSON.stringify({email:v('login-email'),password:v('login-password')})});
-    token=d.token;localStorage.setItem('cb_token',token);enterApp(d);
-  }catch(e){document.getElementById('login-error').textContent=e.message}
-}
-
-async function doSignup(){
-  document.getElementById('signup-error').textContent='';
-  try{
-    const d=await api('/api/signup',{method:'POST',body:JSON.stringify({email:v('signup-email'),password:v('signup-password'),company_name:v('signup-company'),name:v('signup-name')})});
-    token=d.token;localStorage.setItem('cb_token',token);enterApp(d);
-  }catch(e){document.getElementById('signup-error').textContent=e.message}
-}
-
+// Auth
+function showAuthTab(t){document.getElementById('auth-login').classList.toggle('hidden',t!=='login');document.getElementById('auth-signup').classList.toggle('hidden',t!=='signup');document.querySelectorAll('.auth-tabs button').forEach((b,i)=>b.classList.toggle('active',i===(t==='login'?0:1)))}
+async function doLogin(){document.getElementById('login-error').textContent='';try{const d=await api('/api/login',{method:'POST',body:JSON.stringify({email:v('login-email'),password:v('login-password')})});token=d.token;localStorage.setItem('cb_token',token);planInfo=d.company||{};enterApp(d)}catch(e){document.getElementById('login-error').textContent=e.message}}
+async function doSignup(){document.getElementById('signup-error').textContent='';try{const d=await api('/api/signup',{method:'POST',body:JSON.stringify({email:v('signup-email'),password:v('signup-password'),company_name:v('signup-company'),name:v('signup-name')})});token=d.token;localStorage.setItem('cb_token',token);planInfo=d.company||{};enterApp(d)}catch(e){document.getElementById('signup-error').textContent=e.message}}
 function logout(){token=null;localStorage.removeItem('cb_token');location.reload()}
-
 function enterApp(data){
-  console.log('enterApp called with:', data);
   document.getElementById('page-auth').classList.add('hidden');
   document.getElementById('main-nav').classList.remove('hidden');
   document.getElementById('user-badge').classList.remove('hidden');
   document.getElementById('logout-btn').classList.remove('hidden');
   document.getElementById('user-badge').textContent=data.company?data.company.name:data.user.email;
-  showPage('opportunities');
-  console.log('enterApp complete');
-}
+  planInfo=data.company||{};showPage('opportunities')}
+async function checkAuth(){if(!token)return;try{const d=await api('/api/me');enterApp(d)}catch{token=null;localStorage.removeItem('cb_token')}}
 
-async function checkAuth(){
-  if(!token){console.log('No token found');return}
-  console.log('Token found, checking auth...');
-  try{const d=await api('/api/me');console.log('Auth OK:',d);enterApp(d)}
-  catch(e){console.log('Auth failed:',e);token=null;localStorage.removeItem('cb_token')}
-}
+// Plan Banner
+function renderPlanBanner(){
+  const el=document.getElementById('plan-banner');if(!el)return;
+  const s=planInfo.plan_status||'trial';const dl=planInfo.trial_days_left;
+  if(s==='active'){el.innerHTML='<div class="plan-banner plan-active"><div><div class="plan-text" style="color:var(--green)">✓ Pro Plan Active</div><div class="plan-sub">Full access to all features</div></div><button class="btn btn-outline" onclick="manageBilling()" style="font-size:12px">Manage Billing</button></div>'}
+  else if(s==='trial'){el.innerHTML='<div class="plan-banner plan-trial"><div><div class="plan-text" style="color:var(--yellow)">🔥 Free Trial'+(dl!==null&&dl!==undefined?' — '+dl+' days left':'')+'</div><div class="plan-sub">Upgrade to keep access after trial ends</div></div><button class="btn btn-upgrade" onclick="upgrade()">Upgrade — $299/mo</button></div>'}
+  else if(s==='expired'||s==='cancelled'){el.innerHTML='<div class="plan-banner plan-expired"><div><div class="plan-text" style="color:var(--red)">⚠ '+(s==='expired'?'Trial Expired':'Subscription Cancelled')+'</div><div class="plan-sub">Subscribe to restore access</div></div><button class="btn btn-upgrade" onclick="upgrade()">Subscribe — $299/mo</button></div>'}
+  else{el.innerHTML=''}}
 
-// ── Pages ──
+// Billing
+function renderBillingSection(){
+  const el=document.getElementById('billing-section');if(!el)return;
+  const s=planInfo.plan_status||'trial';
+  el.innerHTML='<div class="billing-card"><h3 style="margin-bottom:16px">💳 Billing</h3>'+
+    (s==='active'?'<div style="margin-bottom:12px"><span class="badge badge-green" style="font-size:14px;padding:6px 16px">Pro Plan — Active</span></div><p style="font-size:13px;color:var(--dim);margin-bottom:16px">$299/month · Next billing date on your Stripe portal</p><button class="btn btn-outline" onclick="manageBilling()">Manage Subscription</button>':
+    '<div class="billing-price">$299</div><div class="billing-period">per month</div><div style="margin:20px 0"><p style="color:var(--dim);font-size:13px">Everything included: SAM.gov auto-refresh, AI scoring, proposal generation, voice input, email/SMS notifications, unlimited opportunities</p></div><button class="btn btn-upgrade" onclick="upgrade()">'+
+    (s==='trial'?'Upgrade Now':'Subscribe Now')+'</button>'+
+    (s==='trial'&&planInfo.trial_days_left?'<p style="font-size:12px;color:var(--yellow);margin-top:12px">'+planInfo.trial_days_left+' days left on free trial</p>':''))+
+    '</div>'}
+
+async function upgrade(){
+  try{const d=await api('/api/create-checkout',{method:'POST'});if(d.checkout_url)window.location.href=d.checkout_url}
+  catch(e){alert('Error: '+e.message)}}
+async function manageBilling(){
+  try{const d=await api('/api/billing-portal',{method:'POST'});if(d.portal_url)window.location.href=d.portal_url}
+  catch(e){alert('Error: '+e.message)}}
+
+// Check for billing success in URL
+if(window.location.search.includes('billing=success')){
+  setTimeout(()=>{document.getElementById('sam-status').innerHTML='<div class="success-msg">🎉 Welcome to ConstructBid AI Pro! Your subscription is active.</div>';history.replaceState(null,'','/dashboard')},500)}
+
+// Pages
 function showPage(p){
   ['opportunities','detail','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));
   document.getElementById('page-'+p).classList.remove('hidden');
   document.querySelectorAll('#main-nav button').forEach(b=>b.classList.remove('active'));
   ({opportunities:0,fieldreport:1,profile:2})[p]!==undefined&&document.querySelectorAll('#main-nav button')[({opportunities:0,fieldreport:1,profile:2})[p]].classList.add('active');
-  if(p==='opportunities')loadOpps();
-  if(p==='profile')loadCompany();
-}
+  if(p==='opportunities'){loadOpps();renderPlanBanner()}
+  if(p==='profile'){loadCompany();renderBillingSection()}}
 
-// ── SAM.gov ──
-async function refreshSAM(){
-  const btn=document.getElementById('sam-btn'),st=document.getElementById('sam-status');
-  btn.disabled=true;btn.textContent='⏳ Searching...';st.innerHTML='';
-  try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});
-    st.innerHTML='<div class="success-msg">Cleared '+d.cleared+' old. Found '+d.fetched+' — kept '+d.added+' scoring 40+.</div>';loadOpps();
-  }catch(e){
-    st.innerHTML='<div class="error-msg">'+esc(e.message)+'</div>';
-  }btn.disabled=false;btn.textContent='🔄 Refresh SAM.gov';
-}
+// SAM
+async function refreshSAM(){const btn=document.getElementById('sam-btn'),st=document.getElementById('sam-status');btn.disabled=true;btn.textContent='⏳ Searching...';st.innerHTML='';try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});st.innerHTML='<div class="success-msg">Cleared '+d.cleared+' old. Found '+d.fetched+' — kept '+d.added+'.</div>';loadOpps()}catch(e){st.innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}btn.disabled=false;btn.textContent='🔄 Refresh SAM.gov'}
 async function clearExpired(){try{const d=await api('/api/clear-expired',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+' expired.</div>';loadOpps()}catch(e){alert(e.message)}}
 async function clearPasses(){if(!confirm('Remove all red SAM.gov?'))return;try{const d=await api('/api/clear-passes',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'.</div>';loadOpps()}catch(e){alert(e.message)}}
 
-// ── Opportunities ──
+// Opportunities
 async function loadOpps(){try{opps=await api('/api/opportunities');renderStats();renderList()}catch{}}
-function renderStats(){
-  const p=opps.filter(o=>o.recommendation==='PURSUE').length,r=opps.filter(o=>o.recommendation==='REVIEW').length,
-  s=opps.filter(o=>o.source==='sam.gov').length,vl=opps.reduce((a,o)=>a+(o.value||0),0);
-  document.getElementById('stats-bar').innerHTML=st(opps.length,'Total','--accent')+st(p,'Pursue','--green')+st(r,'Review','--yellow')+st(s,'SAM.gov','--accent2')+st('$'+(vl/1e6).toFixed(1)+'M','Pipeline','--text');
-}
+function renderStats(){const p=opps.filter(o=>o.recommendation==='PURSUE').length,r=opps.filter(o=>o.recommendation==='REVIEW').length,s=opps.filter(o=>o.source==='sam.gov').length,vl=opps.reduce((a,o)=>a+(o.value||0),0);document.getElementById('stats-bar').innerHTML=st(opps.length,'Total','--accent')+st(p,'Pursue','--green')+st(r,'Review','--yellow')+st(s,'SAM.gov','--accent2')+st('$'+(vl/1e6).toFixed(1)+'M','Pipeline','--text')}
 function st(n,l,c){return '<div class="stat"><div class="stat-num" style="color:var('+c+')">'+n+'</div><div class="stat-label">'+l+'</div></div>'}
 function sc(r){return r==='PURSUE'?'pursue':r==='REVIEW'?'review':'pass'}
 function bc(s){return s==='SDVOSB'?'badge-green':s==='Full & Open'?'badge-red':'badge-yellow'}
-function renderList(){
-  document.getElementById('opp-list').innerHTML=opps.map(o=>'<div class="card card-clickable" onclick="showDetail(\''+o.id+'\')"><div class="opp-row"><div style="flex:1"><div class="opp-title">'+esc(o.title)+' <span class="source-tag '+(o.source==='sam.gov'?'source-sam':'source-manual')+'">'+(o.source==='sam.gov'?'SAM':'Manual')+'</span></div><div class="opp-agency">'+esc(o.agency||'')+'</div><div><span class="tag">'+(o.naics||'')+'</span>'+(o.location?'<span class="tag">'+o.location+'</span>':'')+(o.value?'<span class="tag">$'+(o.value/1e6).toFixed(1)+'M</span>':'')+'<span class="badge '+bc(o.set_aside||'')+'">'+(o.set_aside||'Open')+'</span>'+(o.due_date?'<span class="tag">Due '+o.due_date+'</span>':'')+'</div></div><div class="opp-right"><div><div class="score-circle score-'+sc(o.recommendation)+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+sc(o.recommendation)+')">'+o.recommendation+'</div></div></div></div></div>').join('')}
+function renderList(){document.getElementById('opp-list').innerHTML=opps.map(o=>'<div class="card card-clickable" onclick="showDetail(\''+o.id+'\')"><div class="opp-row"><div style="flex:1"><div class="opp-title">'+esc(o.title)+' <span class="source-tag '+(o.source==='sam.gov'?'source-sam':'source-manual')+'">'+(o.source==='sam.gov'?'SAM':'Manual')+'</span></div><div class="opp-agency">'+esc(o.agency||'')+'</div><div><span class="tag">'+(o.naics||'')+'</span>'+(o.location?'<span class="tag">'+o.location+'</span>':'')+(o.value?'<span class="tag">$'+(o.value/1e6).toFixed(1)+'M</span>':'')+'<span class="badge '+bc(o.set_aside||'')+'">'+(o.set_aside||'Open')+'</span>'+(o.due_date?'<span class="tag">Due '+o.due_date+'</span>':'')+'</div></div><div class="opp-right"><div><div class="score-circle score-'+sc(o.recommendation)+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+sc(o.recommendation)+')">'+o.recommendation+'</div></div></div></div></div>').join('')}
 function toggleAddForm(){document.getElementById('add-form').classList.toggle('hidden')}
-async function addOpp(){
-  const b={title:v('new-title'),agency:v('new-agency'),naics:v('new-naics'),location:v('new-location'),due_date:v('new-due'),value:parseInt(v('new-value'))||0,set_aside:v('new-setaside'),scope:v('new-scope')};
-  if(!b.title||!b.scope)return alert('Title and scope required');
-  try{await api('/api/opportunities',{method:'POST',body:JSON.stringify(b)});toggleAddForm();loadOpps()}catch(e){alert(e.message)}
-}
+async function addOpp(){const b={title:v('new-title'),agency:v('new-agency'),naics:v('new-naics'),location:v('new-location'),due_date:v('new-due'),value:parseInt(v('new-value'))||0,set_aside:v('new-setaside'),scope:v('new-scope')};if(!b.title||!b.scope)return alert('Title and scope required');try{await api('/api/opportunities',{method:'POST',body:JSON.stringify(b)});toggleAddForm();loadOpps()}catch(e){alert(e.message)}}
 
-// ── Detail ──
-async function showDetail(id){
-  currentOpp=opps.find(o=>o.id===id);if(!currentOpp)return;
-  ['opportunities','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));
-  document.getElementById('page-detail').classList.remove('hidden');
-  const o=currentOpp,s=sc(o.recommendation);let proj=[];try{proj=await api('/api/projects')}catch{}
-  document.getElementById('detail-content').innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h2 style="margin-bottom:8px">'+esc(o.title)+'</h2><div style="font-size:14px;color:var(--dim)">'+esc(o.agency||'')+'</div>'+(o.sam_link?'<a href="'+o.sam_link+'" target="_blank" style="font-size:12px">SAM.gov →</a>':'')+'</div><div><div class="score-circle score-lg score-'+s+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div class="detail-grid">'+di('NAICS',o.naics)+di('Location',o.location)+di('Value',o.value?'$'+(o.value/1e6).toFixed(1)+'M':'TBD')+di('Set-Aside',o.set_aside||'Open')+di('Due',o.due_date||'TBD')+'<div class="detail-item"><div class="label">Action</div><div class="detail-value" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div style="margin-bottom:20px"><div class="label">Scope</div><p style="font-size:14px;line-height:1.7;margin-top:6px">'+esc(o.scope||'None')+'</p></div><div style="margin-bottom:20px"><div class="label">Fit Analysis</div>'+(o.reasons||[]).map(r=>'<div class="reason">'+esc(r)+'</div>').join('')+'</div><div><div class="label">Past Projects</div>'+proj.map(p=>'<div class="past-project"><div class="name">'+esc(p.name)+'</div><div class="meta">'+esc(p.client)+' · $'+((p.value||0)/1e6).toFixed(1)+'M · '+p.year+'</div></div>').join('')+'</div><div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><button class="btn btn-danger" onclick="delOpp(\''+o.id+'\')" style="font-size:12px;padding:6px 12px">🗑 Remove</button></div></div><div class="card" style="margin-top:12px"><h3>Proposal Sections</h3><div class="section-btns"><button class="btn btn-outline" onclick="genProp(\'executive\')">📄 Executive</button><button class="btn btn-outline" onclick="genProp(\'technical\')">🔧 Technical</button><button class="btn btn-outline" onclick="genProp(\'pastPerformance\')">📊 Past Perf</button><button class="btn btn-outline" onclick="genProp(\'staffing\')">👷 Staffing</button><button class="btn btn-outline" onclick="genProp(\'compliance\')">✅ Compliance</button></div><div id="proposal-output"></div></div>'}
+// Detail
+async function showDetail(id){currentOpp=opps.find(o=>o.id===id);if(!currentOpp)return;['opportunities','fieldreport','profile'].forEach(x=>document.getElementById('page-'+x).classList.add('hidden'));document.getElementById('page-detail').classList.remove('hidden');const o=currentOpp,s=sc(o.recommendation);let proj=[];try{proj=await api('/api/projects')}catch{}
+document.getElementById('detail-content').innerHTML='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px"><div><h2 style="margin-bottom:8px">'+esc(o.title)+'</h2><div style="font-size:14px;color:var(--dim)">'+esc(o.agency||'')+'</div>'+(o.sam_link?'<a href="'+o.sam_link+'" target="_blank" style="font-size:12px">SAM.gov →</a>':'')+'</div><div><div class="score-circle score-lg score-'+s+'">'+o.score+'</div><div class="rec-label" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div class="detail-grid">'+di('NAICS',o.naics)+di('Location',o.location)+di('Value',o.value?'$'+(o.value/1e6).toFixed(1)+'M':'TBD')+di('Set-Aside',o.set_aside||'Open')+di('Due',o.due_date||'TBD')+'<div class="detail-item"><div class="label">Action</div><div class="detail-value" style="color:var(--'+s+')">'+o.recommendation+'</div></div></div><div style="margin-bottom:20px"><div class="label">Scope</div><p style="font-size:14px;line-height:1.7;margin-top:6px">'+esc(o.scope||'None')+'</p></div><div style="margin-bottom:20px"><div class="label">Fit Analysis</div>'+(o.reasons||[]).map(r=>'<div class="reason">'+esc(r)+'</div>').join('')+'</div><div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><button class="btn btn-danger" onclick="delOpp(\''+o.id+'\')" style="font-size:12px;padding:6px 12px">🗑 Remove</button></div></div><div class="card" style="margin-top:12px"><h3>Proposal Sections</h3><div class="section-btns"><button class="btn btn-outline" onclick="genProp(\'executive\')">📄 Executive</button><button class="btn btn-outline" onclick="genProp(\'technical\')">🔧 Technical</button><button class="btn btn-outline" onclick="genProp(\'pastPerformance\')">📊 Past Perf</button><button class="btn btn-outline" onclick="genProp(\'staffing\')">👷 Staffing</button><button class="btn btn-outline" onclick="genProp(\'compliance\')">✅ Compliance</button></div><div id="proposal-output"></div></div>'}
 async function delOpp(id){if(!confirm('Remove?'))return;try{await api('/api/opportunities/'+id,{method:'DELETE'});showPage('opportunities')}catch(e){alert(e.message)}}
 async function genProp(s){if(!currentOpp)return;document.getElementById('proposal-output').innerHTML='<div style="text-align:center;padding:20px;color:var(--dim)">Generating...</div>';try{const d=await api('/api/proposal',{method:'POST',body:JSON.stringify({section:s,opportunity_id:currentOpp.id})});document.getElementById('proposal-output').innerHTML='<pre class="output"><button class="copy-btn" onclick="copyText(this)">📋 Copy</button>'+esc(d.content)+'</pre>'}catch{document.getElementById('proposal-output').innerHTML='<div class="error-msg">Failed</div>'}}
 
-// ── Field Reports ──
+// Field Reports
 async function genReport(){const p=v('fr-project'),n=v('fr-notes');if(!n)return alert('Enter notes');try{const d=await api('/api/field-report',{method:'POST',body:JSON.stringify({project_name:p||'Unnamed',notes:n})});document.getElementById('fr-output').innerHTML='<div class="card" style="margin-top:12px"><pre class="output"><button class="copy-btn" onclick="copyText(this)">📋 Copy</button>'+esc(d.report)+'</pre></div>'}catch{}}
 
-// ── Voice ──
+// Voice
 let vrec=null,vtext='';
-function getSR(){const S=window.SpeechRecognition||window.webkitSpeechRecognition;if(!S){alert('Use Chrome for voice');return null}const r=new S();r.continuous=true;r.interimResults=true;r.lang='en-US';return r}
-function startVoice(btn){
-  if(vrec){const t=vtext;vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Start Speaking';parseVoice(t);return}
-  const r=getSR();if(!r)return;vrec=r;vtext='';
-  document.getElementById('voice-transcript').classList.remove('hidden');document.getElementById('voice-transcript').textContent='Listening...';
-  document.getElementById('voice-results').classList.add('hidden');btn.classList.add('recording');btn.textContent='⏹ Stop';
-  r.onresult=e=>{let f='',i='';for(let x=0;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript+' ';else i+=e.results[x][0].transcript}vtext=f;document.getElementById('voice-transcript').textContent=f+(i?'...'+i:'')};
-  r.onerror=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Start Speaking'};
-  r.onend=()=>{if(btn.classList.contains('recording')){btn.classList.remove('recording');btn.textContent='🎤 Start Speaking';vrec=null;if(vtext.trim())parseVoice(vtext)}};
-  r.start()}
-async function parseVoice(text){
-  const res=document.getElementById('voice-results');res.classList.remove('hidden');res.innerHTML='⏳ Processing...';
-  try{const d=await api('/api/parse-voice-profile',{method:'POST',body:JSON.stringify({transcript:text.trim()})});const p=d.parsed;
-    let h='<strong>Found '+d.fields_found+' fields'+(d.method==='ai'?' (AI)':'')+':</strong><br><br>';
-    if(p.name)h+='✓ Name: '+esc(p.name)+'<br>';if(p.services)h+='✓ Services: '+p.services.join(', ')+'<br>';
-    if(p.certifications)h+='✓ Certs: '+p.certifications.join(', ')+'<br>';if(p.regions)h+='✓ Regions: '+p.regions.join(', ')+'<br>';
-    if(p.bonding_capacity)h+='✓ Bonding: $'+(p.bonding_capacity/1e6).toFixed(1)+'M<br>';if(p.naics)h+='✓ NAICS: '+p.naics.join(', ')+'<br>';
-    if(d.fields_found>0)h+='<br><button class="btn btn-primary" onclick="applyVoice()">✅ Apply & Save</button>';
-    res.innerHTML=h;window._vp=p}catch(e){res.innerHTML='<span style="color:var(--red)">'+esc(e.message)+'</span>'}}
-async function applyVoice(){const p=window._vp;if(!p)return;
-  if(p.name&&document.getElementById('co-name'))document.getElementById('co-name').value=p.name;
-  if(p.services&&document.getElementById('co-services'))document.getElementById('co-services').value=p.services.join(', ');
-  if(p.certifications&&document.getElementById('co-certs'))document.getElementById('co-certs').value=p.certifications.join(', ');
-  if(p.regions&&document.getElementById('co-regions'))document.getElementById('co-regions').value=p.regions.join(', ');
-  if(p.bonding_capacity&&document.getElementById('co-bonding'))document.getElementById('co-bonding').value=p.bonding_capacity;
-  if(p.naics&&document.getElementById('co-naics'))document.getElementById('co-naics').value=p.naics.join(', ');
-  await saveCompany();document.getElementById('voice-results').innerHTML+='<br><span style="color:var(--green)">✓ Saved!</span>'}
-function voiceFR(btn){
-  if(vrec){vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak';return}
-  const r=getSR();if(!r)return;vrec=r;btn.classList.add('recording');btn.textContent='⏹ Stop';const ta=document.getElementById('fr-notes');let ex=ta.value;
-  r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';ta.value=ex+t};
-  r.onerror=r.onend=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak'};r.start()}
+function getSR(){const S=window.SpeechRecognition||window.webkitSpeechRecognition;if(!S){alert('Use Chrome');return null}const r=new S();r.continuous=true;r.interimResults=true;r.lang='en-US';return r}
+function startVoice(btn){if(vrec){const t=vtext;vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Start Speaking';parseVoice(t);return}const r=getSR();if(!r)return;vrec=r;vtext='';document.getElementById('voice-transcript').classList.remove('hidden');document.getElementById('voice-transcript').textContent='Listening...';document.getElementById('voice-results').classList.add('hidden');btn.classList.add('recording');btn.textContent='⏹ Stop';r.onresult=e=>{let f='',i='';for(let x=0;x<e.results.length;x++){if(e.results[x].isFinal)f+=e.results[x][0].transcript+' ';else i+=e.results[x][0].transcript}vtext=f;document.getElementById('voice-transcript').textContent=f+(i?'...'+i:'')};r.onerror=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Start Speaking'};r.onend=()=>{if(btn.classList.contains('recording')){btn.classList.remove('recording');btn.textContent='🎤 Start Speaking';vrec=null;if(vtext.trim())parseVoice(vtext)}};r.start()}
+async function parseVoice(text){const res=document.getElementById('voice-results');res.classList.remove('hidden');res.innerHTML='⏳ Processing...';try{const d=await api('/api/parse-voice-profile',{method:'POST',body:JSON.stringify({transcript:text.trim()})});const p=d.parsed;let h='<strong>Found '+d.fields_found+' fields'+(d.method==='ai'?' (AI)':'')+':</strong><br><br>';if(p.name)h+='✓ Name: '+esc(p.name)+'<br>';if(p.services)h+='✓ Services: '+p.services.join(', ')+'<br>';if(p.certifications)h+='✓ Certs: '+p.certifications.join(', ')+'<br>';if(p.regions)h+='✓ Regions: '+p.regions.join(', ')+'<br>';if(p.bonding_capacity)h+='✓ Bonding: $'+(p.bonding_capacity/1e6).toFixed(1)+'M<br>';if(d.fields_found>0)h+='<br><button class="btn btn-primary" onclick="applyVoice()">✅ Apply & Save</button>';res.innerHTML=h;window._vp=p}catch(e){res.innerHTML='<span style="color:var(--red)">'+esc(e.message)+'</span>'}}
+async function applyVoice(){const p=window._vp;if(!p)return;if(p.name&&document.getElementById('co-name'))document.getElementById('co-name').value=p.name;if(p.services&&document.getElementById('co-services'))document.getElementById('co-services').value=p.services.join(', ');if(p.certifications&&document.getElementById('co-certs'))document.getElementById('co-certs').value=p.certifications.join(', ');if(p.regions&&document.getElementById('co-regions'))document.getElementById('co-regions').value=p.regions.join(', ');if(p.bonding_capacity&&document.getElementById('co-bonding'))document.getElementById('co-bonding').value=p.bonding_capacity;if(p.naics&&document.getElementById('co-naics'))document.getElementById('co-naics').value=p.naics.join(', ');await saveCompany();document.getElementById('voice-results').innerHTML+='<br><span style="color:var(--green)">✓ Saved!</span>'}
+function voiceFR(btn){if(vrec){vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak';return}const r=getSR();if(!r)return;vrec=r;btn.classList.add('recording');btn.textContent='⏹ Stop';const ta=document.getElementById('fr-notes');let ex=ta.value;r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';ta.value=ex+t};r.onerror=r.onend=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak'};r.start()}
 
-// ── Company ──
+// Company
 async function loadCompany(){
   try{company=await api('/api/company')}catch{return}
+  planInfo=company;
   document.getElementById('company-form').innerHTML=
     fg('Company Name','co-name',company.name)+fg('Services (comma-separated)','co-services',(company.services||[]).join(', '))+
     fg('Certifications','co-certs',(company.certifications||[]).join(', '))+fg('NAICS Codes','co-naics',(company.naics||[]).join(', '))+
     fg('Bonding Capacity ($)','co-bonding',company.bonding_capacity||0,'number')+fg('Regions (state codes)','co-regions',(company.regions||[]).join(', '))+
     '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px"><div class="label">🔑 SAM.gov API Key</div><input id="co-samkey" type="password" value="'+esc(company.sam_api_key||'')+'" placeholder="Paste key"><div class="info-box">Free from <a href="https://sam.gov" target="_blank">sam.gov</a> → Profile → Public API Key<br>'+(company.sam_api_key_set?'<span style="color:var(--green)">✓ Set</span>':'<span style="color:var(--yellow)">⚠ Not set</span>')+'</div></div>'+
-    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px"><h3 style="color:#c084fc">🔔 Notifications</h3><label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="co-notify-on" '+(company.notify_enabled?'checked':'')+' style="width:18px;height:18px;accent-color:var(--green)"> Enable notifications</label><div class="form-grid"><div><div class="label">📧 Email</div><input id="co-notify-email" type="email" value="'+esc(company.notify_email||'')+'" placeholder="you@co.com"></div><div><div class="label">📱 Phone</div><input id="co-notify-phone" type="tel" value="'+esc(company.notify_phone||'')+'" placeholder="+15551234567"></div></div><div class="label">Min Score</div><select id="co-notify-score"><option value="75"'+(String(company.notify_min_score||75)==='75'?' selected':'')+'>75+ (PURSUE)</option><option value="55"'+(String(company.notify_min_score)==='55'?' selected':'')+'>55+ (PURSUE+REVIEW)</option><option value="85"'+(String(company.notify_min_score)==='85'?' selected':'')+'>85+ (Top only)</option></select><button class="btn btn-outline" onclick="testNotify()" style="margin-top:10px;font-size:12px">🔔 Test</button><span id="notify-msg" style="margin-left:10px;font-size:12px"></span></div>'+
+    '<div class="form-group" style="border-top:1px solid var(--border);padding-top:16px"><h3 style="color:#c084fc">🔔 Notifications</h3><label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer"><input type="checkbox" id="co-notify-on" '+(company.notify_enabled?'checked':'')+' style="width:18px;height:18px;accent-color:var(--green)"> Enable</label><div class="form-grid"><div><div class="label">📧 Email</div><input id="co-notify-email" type="email" value="'+esc(company.notify_email||'')+'"></div><div><div class="label">📱 Phone</div><input id="co-notify-phone" type="tel" value="'+esc(company.notify_phone||'')+'"></div></div><div class="label">Min Score</div><select id="co-notify-score"><option value="75"'+(String(company.notify_min_score||75)==='75'?' selected':'')+'>75+ (PURSUE)</option><option value="55"'+(String(company.notify_min_score)==='55'?' selected':'')+'>55+</option><option value="85"'+(String(company.notify_min_score)==='85'?' selected':'')+'>85+</option></select><button class="btn btn-outline" onclick="testNotify()" style="margin-top:10px;font-size:12px">🔔 Test</button><span id="notify-msg" style="margin-left:10px;font-size:12px"></span></div>'+
     '<button class="btn btn-primary" onclick="saveCompany()" style="margin-top:12px">💾 Save</button> <span id="save-msg" style="margin-left:12px;font-size:13px;color:var(--green)"></span>';
   let proj=[];try{proj=await api('/api/projects')}catch{}
-  document.getElementById('projects-content').innerHTML=proj.map(p=>'<div class="past-project"><div class="name">'+esc(p.name)+'</div><div class="meta">'+esc(p.client)+' · $'+((p.value||0)/1e6).toFixed(1)+'M · '+p.year+'</div></div>').join('')||'<p style="color:var(--dim);font-size:13px">No projects yet</p>'}
-async function saveCompany(){
-  const b={name:v('co-name'),services:csv('co-services'),certifications:csv('co-certs'),naics:csv('co-naics'),bonding_capacity:parseInt(v('co-bonding'))||0,regions:csv('co-regions').map(s=>s.toUpperCase()),sam_api_key:v('co-samkey').trim(),notify_email:v('co-notify-email').trim(),notify_phone:v('co-notify-phone').trim(),notify_enabled:document.getElementById('co-notify-on').checked,notify_min_score:parseInt(v('co-notify-score'))||75};
-  try{await api('/api/company',{method:'PUT',body:JSON.stringify(b)});const m=document.getElementById('save-msg');m.textContent='✓ Saved';setTimeout(()=>{m.textContent='';loadCompany()},1500);
-    document.getElementById('user-badge').textContent=b.name}catch(e){alert(e.message)}}
-async function testNotify(){const m=document.getElementById('notify-msg');m.textContent='⏳...';try{const d=await api('/api/test-notification',{method:'POST'});m.textContent='✓ Sent to '+d.sent_to.join(' & ');m.style.color='var(--green)'}catch(e){m.textContent=e.message;m.style.color='var(--red)'}setTimeout(()=>m.textContent='',5000)}
+  document.getElementById('projects-content').innerHTML=proj.map(p=>'<div class="past-project"><div class="name">'+esc(p.name)+'</div><div class="meta">'+esc(p.client)+' · $'+((p.value||0)/1e6).toFixed(1)+'M · '+p.year+'</div></div>').join('')||'<p style="color:var(--dim);font-size:13px">No projects yet</p>';
+  renderBillingSection()}
+async function saveCompany(){const b={name:v('co-name'),services:csv('co-services'),certifications:csv('co-certs'),naics:csv('co-naics'),bonding_capacity:parseInt(v('co-bonding'))||0,regions:csv('co-regions').map(s=>s.toUpperCase()),sam_api_key:v('co-samkey').trim(),notify_email:v('co-notify-email').trim(),notify_phone:v('co-notify-phone').trim(),notify_enabled:document.getElementById('co-notify-on').checked,notify_min_score:parseInt(v('co-notify-score'))||75};try{await api('/api/company',{method:'PUT',body:JSON.stringify(b)});const m=document.getElementById('save-msg');m.textContent='✓ Saved';setTimeout(()=>{m.textContent='';loadCompany()},1500);document.getElementById('user-badge').textContent=b.name}catch(e){alert(e.message)}}
+async function testNotify(){const m=document.getElementById('notify-msg');m.textContent='⏳...';try{const d=await api('/api/test-notification',{method:'POST'});m.textContent='✓ Sent';m.style.color='var(--green)'}catch(e){m.textContent=e.message;m.style.color='var(--red)'}setTimeout(()=>m.textContent='',5000)}
 
-// ── Helpers ──
+// Helpers
 function v(id){return document.getElementById(id).value}
 function csv(id){return v(id).split(',').map(s=>s.trim()).filter(Boolean)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
