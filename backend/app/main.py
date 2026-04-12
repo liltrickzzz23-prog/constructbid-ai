@@ -304,8 +304,16 @@ def gen_proposal(section,opp,company,past):
 
 # ═══ ROUTES ═══
 
-@app.get("/")
-def root():
+@app.get("/",response_class=HTMLResponse)
+def landing():
+    for p in [os.path.join(os.path.dirname(__file__),"..","..","landing.html"),
+              os.path.join(os.path.dirname(__file__),"..","landing.html")]:
+        if os.path.exists(p):
+            with open(p) as f: return HTMLResponse(f.read())
+    return HTMLResponse('<meta http-equiv="refresh" content="0;url=/dashboard">')
+
+@app.get("/api/status")
+def status():
     return {"app":"ConstructBid AI","version":"6.0.0","status":"running"}
 
 @app.get("/dashboard",response_class=HTMLResponse)
