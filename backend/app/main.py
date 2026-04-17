@@ -679,3 +679,36 @@ async def voice(data:VoiceIn,request:Request):
 
 if __name__=="__main__":
     import uvicorn;uvicorn.run(app,host="0.0.0.0",port=8000)
+
+# ── UEI Auto-Fill (SAM.gov Entity API) ──
+class UEILookup(BaseModel):
+    uei: str
+
+@app.post("/api/lookup-uei")
+async def lookup_uei(data: UEILookup, request: Request):
+    gu(request)
+    uei = data.uei.strip().upper()
+    if not uei or len(uei) < 10:
+        raise HTTPException(400, "Enter a valid UEI (12 characters)")
+    try:
+        async with httpx.AsyncClient(timeout=20) as c:
+            r = await c.get("https://api.sam.gov/entity-information/v2/entities", params={"ueiSAM": uei, "api_key": env("SAM_ENTITY_API_KEY") or env("SAM_API_KEY") or ""}, headers={"Accept": "application/json"})
+            if r.status_code == 200:
+                entities = r.json().get("entityData", [])
+                if entities:
+                    e = entities[0]; reg = e.get("entityRegistration", {}); core = e.get("coreData", {}); assertions = e.get("assertions", {})
+                    name = reg.get("legalBusinessName", "") or reg.get("dbaName", "")
+                    phys = core.get("physicalAddress", {}) or {}; state = phys.get("stateOrProvinceCode", "")
+                    naics_list = [str(n.get("naicsCode", "")) for n in (assertions.get("goodsAndServices", {}).get("naicsList", []) or []) if n.get("naicsCode")]
+                    certs = []
+                    for b in (assertions.get("businessTypes", {}).get("businessTypeList", []) or []):
+                        bt = b.get("businessType", "")
+                        if "Service Disabled Veteran" in bt: certs.append("SDVOSB")
+                        elif "Veteran Owned" in bt: certs.append("VOSB")
+                        elif "8(a)" in bt: certs.append("8(a)")
+                        elif "HUBZone" in bt: certs.append("HUBZone")
+                        elif "Woman Owned" in bt: certs.append("WOSB")
+                    return {"found": True, "name": name, "uei": uei, "cage": reg.get("cageCode", ""), "state": state, "naics": naics_list, "certifications": list(set(certs)), "regions": [state] if state else []}
+            return {"found": False, "message": "UEI not found. Check the number."}
+    except Exception as ex:
+        return {"found": False, "message": f"SAM.gov error: {str(ex)[:100]}"}
