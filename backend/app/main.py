@@ -1,8 +1,7 @@
 """
-ConstructBid AI — Government Contractor OS v7
-Full SaaS: auth, PostgreSQL, SAM.gov, notifications, voice AI, Stripe, tracking, analytics, themes.
+ConstructBid AI v8 — Full SaaS with AI chat, onboarding, weekly digest.
 """
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI,HTTPException,Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -20,26 +19,23 @@ TRIAL_DAYS=14
 stripe.api_key=STRIPE_SECRET
 
 def c2d(c):
-    return {"id":c.id,"name":c.name,"services":c.services or[],"certifications":c.certifications or[],
+    return{"id":c.id,"name":c.name,"services":c.services or[],"certifications":c.certifications or[],
     "naics":c.naics or[],"bonding_capacity":c.bonding_capacity or 0,"regions":c.regions or[],
     "sam_api_key":c.sam_api_key or"","notify_email":c.notify_email or"","notify_phone":c.notify_phone or"",
     "notify_enabled":c.notify_enabled or False,"notify_min_score":c.notify_min_score or 75,
     "plan_status":c.plan_status or"trial","stripe_customer_id":c.stripe_customer_id or"",
     "stripe_subscription_id":c.stripe_subscription_id or"","theme":c.theme or"dark-blue",
     "trial_ends_at":c.trial_ends_at.isoformat() if c.trial_ends_at else None}
-
 def o2d(o):
-    return {"id":o.id,"company_id":o.company_id,"title":o.title or"","agency":o.agency or"",
+    return{"id":o.id,"company_id":o.company_id,"title":o.title or"","agency":o.agency or"",
     "naics":o.naics or"","location":o.location or"","due_date":o.due_date or"","value":o.value or 0,
     "set_aside":o.set_aside or"","scope":o.scope or"","status":o.status or"new","source":o.source or"manual",
     "notes":o.notes or"","outcome":o.outcome or"","outcome_value":o.outcome_value or 0,
     "sam_notice_id":o.sam_notice_id,"sam_sol_number":o.sam_sol_number or"",
     "sam_posted_date":o.sam_posted_date or"","sam_type":o.sam_type or"","sam_link":o.sam_link or""}
-
 def p2d(p):
-    return {"id":p.id,"company_id":p.company_id,"name":p.name or"","client":p.client or"",
+    return{"id":p.id,"company_id":p.company_id,"name":p.name or"","client":p.client or"",
     "value":p.value or 0,"year":p.year or 0,"scope":p.scope or""}
-
 def env(n):
     v=os.environ.get(n,"")
     if v:return v
@@ -49,7 +45,6 @@ def env(n):
             for l in f:
                 if l.strip().startswith(f"{n}="):return l.strip().split("=",1)[1].strip().strip('"').strip("'")
     return""
-
 def hp(p):return bcrypt.hashpw(p.encode(),bcrypt.gensalt()).decode()
 def vp(p,h):return bcrypt.checkpw(p.encode(),h.encode())
 def ct(u,c):return jwt.encode({"user_id":u,"company_id":c,"exp":datetime.utcnow()+timedelta(days=30)},JWT_SECRET,algorithm="HS256")
@@ -59,39 +54,59 @@ def gu(r):
     try:p=jwt.decode(a[7:],JWT_SECRET,algorithms=["HS256"]);return{"user_id":p["user_id"],"company_id":p["company_id"]}
     except jwt.ExpiredSignatureError:raise HTTPException(401,"Session expired")
     except:raise HTTPException(401,"Invalid token")
-
 def check_sub(c):
     s=c.plan_status or"trial"
     if s=="active":return True
     if s=="trial" and c.trial_ends_at:return datetime.utcnow()<c.trial_ends_at
     if s=="trial":return True
     return False
-
 def plan_info(c):
     if not c:return{"plan_status":"trial"}
     s=c.plan_status or"trial";i={"plan_status":s}
     if s=="trial" and c.trial_ends_at:
-        dl=(c.trial_ends_at-datetime.utcnow()).days
-        i["trial_days_left"]=max(0,dl)
+        dl=(c.trial_ends_at-datetime.utcnow()).days;i["trial_days_left"]=max(0,dl)
         if dl<0:i["plan_status"]="expired"
     elif s=="active":i["trial_days_left"]=None
     return i
 
 # Notifications
-async def notify(company,opps):
+async def send_notif(company,opps):
     if not company.get("notify_enabled") or not opps:return
     em=company.get("notify_email","");cn=company.get("name","");ct=len(opps)
     subj=f"🔥 {ct} New Opportunit{'ies' if ct>1 else 'y'} — ConstructBid AI"
     txt="\n".join([f"• [{o.get('score',0)}pts] {o.get('title','')}" for o in opps[:5]])
     html=''.join([f'<tr><td style="padding:8px"><strong>{o.get("title","")}</strong><br><span style="color:#888">{o.get("agency","")}</span></td></tr>' for o in opps[:5]])
     html=f'<div style="background:#111;padding:20px;font-family:Arial"><h2 style="color:#22d3ee">🔥 {ct} New Opportunities for {cn}</h2><table>{html}</table></div>'
-    if em:
-        rk=env("RESEND_API_KEY")
-        if rk:
-            try:
-                async with httpx.AsyncClient(timeout=15) as c:
-                    await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":subj,"html":html,"text":txt})
-            except:pass
+    rk=env("RESEND_API_KEY")
+    if em and rk:
+        try:
+            async with httpx.AsyncClient(timeout=15) as c:
+                await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":subj,"html":html,"text":txt})
+        except:pass
+
+# Weekly Digest
+async def send_weekly_digest(company,stats):
+    em=company.get("notify_email","");rk=env("RESEND_API_KEY")
+    if not em or not rk:return
+    cn=company.get("name","")
+    html=f'''<div style="background:#0a0f1a;padding:20px;font-family:Arial">
+    <div style="max-width:600px;margin:0 auto;background:#111827;border-radius:12px;border:1px solid #1e2d3d">
+    <div style="background:linear-gradient(135deg,#3b82f6,#06b6d4);padding:24px;text-align:center">
+    <h1 style="color:white;margin:0;font-size:22px">📊 Weekly Report — {cn}</h1>
+    <p style="color:rgba(255,255,255,.7);margin:8px 0 0">ConstructBid AI</p></div>
+    <div style="padding:24px">
+    <table style="width:100%;border-collapse:collapse">
+    <tr><td style="padding:12px;border-bottom:1px solid #1e2d3d;color:#64748b">New Opportunities</td><td style="padding:12px;border-bottom:1px solid #1e2d3d;text-align:right;font-weight:700;color:#e2e8f0;font-size:20px">{stats.get("new_this_week",0)}</td></tr>
+    <tr><td style="padding:12px;border-bottom:1px solid #1e2d3d;color:#64748b">Worth Pursuing</td><td style="padding:12px;border-bottom:1px solid #1e2d3d;text-align:right;font-weight:700;color:#22c55e;font-size:20px">{stats.get("pursue",0)}</td></tr>
+    <tr><td style="padding:12px;border-bottom:1px solid #1e2d3d;color:#64748b">Pipeline Value</td><td style="padding:12px;border-bottom:1px solid #1e2d3d;text-align:right;font-weight:700;color:#06b6d4;font-size:20px">${stats.get("pipeline",0)/1e6:.1f}M</td></tr>
+    <tr><td style="padding:12px;border-bottom:1px solid #1e2d3d;color:#64748b">Bids Submitted</td><td style="padding:12px;border-bottom:1px solid #1e2d3d;text-align:right;font-weight:700;color:#e2e8f0;font-size:20px">{stats.get("submitted",0)}</td></tr>
+    <tr><td style="padding:12px;color:#64748b">Win Rate</td><td style="padding:12px;text-align:right;font-weight:700;color:#22c55e;font-size:20px">{stats.get("win_rate",0)}%</td></tr>
+    </table></div></div></div>'''
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":f"📊 Weekly Report — {cn}","html":html})
+        print(f"[DIGEST] Sent to {em}")
+    except Exception as e:print(f"[DIGEST] Error: {e}")
 
 # Scoring
 SK=["cemetery","columbarium","gravesite","burial","headstone","memorial","interment","construction","renovation","remodel","expansion","demolition","design-build","design build","facilities","maintenance","grounds","landscaping","mowing","irrigation","hvac","plumbing","mechanical","electrical","roofing","painting","concrete","masonry","site prep","excavation","grading","paving","drainage","fencing","restoration","historic","rehabilitation","lease","leasing","repair","replace","install","upgrade","improve"]
@@ -202,8 +217,10 @@ async def fetch_sam(company,days=30):
             except Exception as e:print(f"SAM error: {e}")
     return opps
 
-# Auto-refresh
+# Auto-refresh + weekly digest
 ARH=6;ars={"last_run":None,"next_run":None,"last_result":None,"running":False}
+digest_tracker={}
+
 async def ar_loop():
     while True:
         await asyncio.sleep(10)
@@ -220,10 +237,28 @@ async def ar_loop():
                         if sc["score"]>=40:se.add(Opportunity(**o));added+=1
                         if sc["score"]>=nm:nfy.append({**o,**sc})
                     se.commit()
-                    if nfy:await notify(cd,nfy)
+                    if nfy:await send_notif(cd,nfy)
                     ars["last_result"]=f"Added {added} for {cd['name']}"
                 except Exception as e:se.rollback();ars["last_result"]=str(e)[:100]
                 ars["running"]=False
+
+                # Weekly digest check (send on Mondays)
+                cid=comp.id;today=date.today()
+                if today.weekday()==0:  # Monday
+                    last_sent=digest_tracker.get(cid)
+                    if last_sent!=str(today) and cd.get("notify_email"):
+                        opps=se.query(Opportunity).filter(Opportunity.company_id==cid).all()
+                        week_ago=(datetime.utcnow()-timedelta(days=7)).isoformat()
+                        new_week=sum(1 for o in opps if o.created_at and o.created_at.isoformat()>week_ago)
+                        scored=[score(o2d(o),cd) for o in opps]
+                        pursue=sum(1 for s in scored if s["recommendation"]=="PURSUE")
+                        pipeline=sum(o.value or 0 for o in opps)
+                        submitted=sum(1 for o in opps if o.status=="submitted")
+                        won=sum(1 for o in opps if o.outcome=="won")
+                        lost=sum(1 for o in opps if o.outcome=="lost")
+                        wr=round(won/(won+lost)*100) if(won+lost)>0 else 0
+                        await send_weekly_digest(cd,{"new_this_week":new_week,"pursue":pursue,"pipeline":pipeline,"submitted":submitted,"win_rate":wr})
+                        digest_tracker[cid]=str(today)
         finally:se.close()
         ars["next_run"]=(datetime.now()+timedelta(hours=ARH)).isoformat()
         await asyncio.sleep(ARH*3600)
@@ -232,7 +267,7 @@ async def ar_loop():
 async def lifespan(app):
     init_db();task=asyncio.create_task(ar_loop());yield;task.cancel()
 
-app=FastAPI(title="ConstructBid AI",version="7.0.0",lifespan=lifespan)
+app=FastAPI(title="ConstructBid AI",version="8.0.0",lifespan=lifespan)
 app.add_middleware(CORSMiddleware,allow_origins=["*"],allow_methods=["*"],allow_headers=["*"])
 
 # Models
@@ -256,6 +291,8 @@ class SAMReq(BaseModel):
     days_back:Optional[int]=30;min_score:Optional[int]=40
 class VoiceIn(BaseModel):
     transcript:str
+class AIChatReq(BaseModel):
+    opportunity_id:str;question:str
 
 # Proposals
 def gen_prop(sec,o,c,past):
@@ -275,7 +312,7 @@ def landing():
     return HTMLResponse('<meta http-equiv="refresh" content="0;url=/dashboard">')
 
 @app.get("/api/status")
-def status():return{"app":"ConstructBid AI","version":"7.0.0","status":"running"}
+def status():return{"app":"ConstructBid AI","version":"8.0.0","status":"running"}
 
 @app.get("/dashboard",response_class=HTMLResponse)
 def dashboard():
@@ -296,7 +333,7 @@ def signup(d:SignupReq):
         co=Company(id=cid,name=d.company_name or"My Company",plan_status="trial",trial_ends_at=te)
         us=User(id=uid,email=d.email.lower().strip(),password_hash=hp(d.password),name=d.name or"",company_id=cid)
         se.add(co);se.add(us);se.commit()
-        return{"token":ct(uid,cid),"user":{"id":uid,"email":us.email,"name":us.name,"company_id":cid},"company":{"id":cid,"name":co.name,"plan_status":"trial","trial_days_left":TRIAL_DAYS}}
+        return{"token":ct(uid,cid),"user":{"id":uid,"email":us.email,"name":us.name,"company_id":cid},"company":{"id":cid,"name":co.name,"plan_status":"trial","trial_days_left":TRIAL_DAYS},"is_new":True}
     finally:se.close()
 
 @app.post("/api/login")
@@ -307,7 +344,7 @@ def login(d:LoginReq):
         if not u or not vp(d.password,u.password_hash):raise HTTPException(401,"Invalid credentials")
         co=se.query(Company).filter(Company.id==u.company_id).first()
         pi=plan_info(co)
-        return{"token":ct(u.id,u.company_id),"user":{"id":u.id,"email":u.email,"name":u.name,"company_id":u.company_id},"company":{"id":co.id,"name":co.name,**pi} if co else None}
+        return{"token":ct(u.id,u.company_id),"user":{"id":u.id,"email":u.email,"name":u.name,"company_id":u.company_id},"company":{"id":co.id,"name":co.name,"theme":co.theme or"dark-blue",**pi} if co else None}
     finally:se.close()
 
 @app.get("/api/me")
@@ -320,6 +357,79 @@ def me(request:Request):
         pi=plan_info(co) if co else{}
         return{"user":{"id":us.id,"email":us.email,"name":us.name,"company_id":us.company_id},"company":{"id":co.id,"name":co.name,"theme":co.theme or"dark-blue",**pi} if co else None}
     finally:se.close()
+
+# Onboarding status
+@app.get("/api/onboarding")
+def onboarding(request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not co:return{"steps":[],"complete":0,"total":5}
+        cd=c2d(co)
+        steps=[
+            {"key":"name","label":"Add your company name","done":bool(cd["name"] and cd["name"]!="New Company" and cd["name"]!="My Company"),"tip":"Go to Company tab and enter your real company name"},
+            {"key":"naics","label":"Add NAICS codes","done":len(cd["naics"])>0,"tip":"Your NAICS codes tell us what contracts to find. Look them up at naics.com"},
+            {"key":"certs","label":"Add certifications","done":len(cd["certifications"])>0,"tip":"SDVOSB, 8(a), HUBZone, etc. These determine which set-asides you qualify for"},
+            {"key":"regions","label":"Set operating regions","done":len(cd["regions"])>0,"tip":"Which states do you work in? We'll prioritize opportunities there"},
+            {"key":"sam","label":"Connect SAM.gov API key","done":bool(cd["sam_api_key"]),"tip":"Free from sam.gov → Profile → Public API Key. This lets us auto-find opportunities"},
+        ]
+        complete=sum(1 for s in steps if s["done"])
+        return{"steps":steps,"complete":complete,"total":len(steps)}
+    finally:se.close()
+
+# AI Chat
+@app.post("/api/ask-ai")
+async def ask_ai(req:AIChatReq,request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        o=se.query(Opportunity).filter(Opportunity.id==req.opportunity_id,Opportunity.company_id==u["company_id"]).first()
+        if not o:raise HTTPException(404)
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        cd=c2d(co) if co else{};od=o2d(o);sc=score(od,cd)
+    finally:se.close()
+
+    ak=env("ANTHROPIC_API_KEY")
+    if not ak:raise HTTPException(400,"AI not configured. Add ANTHROPIC_API_KEY to environment.")
+
+    prompt=f"""You are an expert government contracting advisor helping a contractor evaluate a bid opportunity.
+
+Company Profile:
+- Name: {cd.get('name','')}
+- Services: {', '.join(cd.get('services',[]))}
+- Certifications: {', '.join(cd.get('certifications',[]))}
+- NAICS Codes: {', '.join(cd.get('naics',[]))}
+- Bonding: ${cd.get('bonding_capacity',0)/1e6:.1f}M
+- Regions: {', '.join(cd.get('regions',[]))}
+
+Opportunity:
+- Title: {od.get('title','')}
+- Agency: {od.get('agency','')}
+- NAICS: {od.get('naics','')}
+- Set-Aside: {od.get('set_aside','')}
+- Location: {od.get('location','')}
+- Value: ${od.get('value',0)/1e6:.1f}M
+- Due Date: {od.get('due_date','')}
+- Scope: {od.get('scope','')}
+
+AI Score: {sc['score']}/100 ({sc['recommendation']})
+Reasons: {'; '.join(sc['reasons'])}
+
+Answer the user's question concisely and specifically about this opportunity. Be direct and actionable. If they ask "can we win this?" give honest odds and explain why.
+
+User question: {req.question}"""
+
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            r=await c.post("https://api.anthropic.com/v1/messages",
+                headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},
+                json={"model":"claude-sonnet-4-20250514","max_tokens":800,"messages":[{"role":"user","content":prompt}]})
+            if r.status_code==200:
+                txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
+                return{"answer":txt,"score":sc["score"],"recommendation":sc["recommendation"]}
+            else:
+                raise HTTPException(500,f"AI error: {r.status_code}")
+    except HTTPException:raise
+    except Exception as e:raise HTTPException(500,f"AI error: {str(e)[:100]}")
 
 # Company
 @app.get("/api/company")
@@ -391,22 +501,19 @@ def analytics(request:Request):
     try:
         c=se.query(Company).filter(Company.id==u["company_id"]).first();cd=c2d(c) if c else{}
         opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
-        total=len(opps)
-        by_status={};by_outcome={};total_value=0;won_value=0
+        total=len(opps);by_status={};by_outcome={};tv=0;wv=0
         for o in opps:
             st=o.status or"new";oc=o.outcome or""
             by_status[st]=by_status.get(st,0)+1
             if oc:by_outcome[oc]=by_outcome.get(oc,0)+1
-            total_value+=o.value or 0
-            if oc=="won":won_value+=o.outcome_value or o.value or 0
+            tv+=o.value or 0
+            if oc=="won":wv+=o.outcome_value or o.value or 0
         scored=[score(o2d(o),cd) for o in opps]
         pursue=sum(1 for s in scored if s["recommendation"]=="PURSUE")
         review=sum(1 for s in scored if s["recommendation"]=="REVIEW")
         won=by_outcome.get("won",0);lost=by_outcome.get("lost",0)
-        win_rate=round(won/(won+lost)*100) if(won+lost)>0 else 0
-        return{"total":total,"by_status":by_status,"by_outcome":by_outcome,"pursue":pursue,"review":review,
-               "total_pipeline_value":total_value,"won_value":won_value,"win_rate":win_rate,
-               "won":won,"lost":lost,"submitted":by_status.get("submitted",0)}
+        wr=round(won/(won+lost)*100) if(won+lost)>0 else 0
+        return{"total":total,"by_status":by_status,"by_outcome":by_outcome,"pursue":pursue,"review":review,"total_pipeline_value":tv,"won_value":wv,"win_rate":wr,"won":won,"lost":lost,"submitted":by_status.get("submitted",0)}
     finally:se.close()
 
 # SAM
@@ -487,7 +594,7 @@ async def test_notif(request:Request):
         cd=c2d(c)
         if not cd.get("notify_enabled"):raise HTTPException(400,"Notifications not enabled")
     finally:se.close()
-    await notify(cd,[{"title":"TEST Notification","agency":"ConstructBid AI","score":99,"recommendation":"PURSUE","value":2500000,"due_date":"2026-05-01"}])
+    await send_notif(cd,[{"title":"TEST Notification","agency":"ConstructBid AI","score":99,"recommendation":"PURSUE","value":2500000,"due_date":"2026-05-01"}])
     return{"sent":True}
 
 # Stripe
