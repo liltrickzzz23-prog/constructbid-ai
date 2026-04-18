@@ -165,6 +165,20 @@ a{color:var(--accent)}
 .score-popup .score-circle{margin:0 auto 16px}
 .score-popup h3{margin-bottom:12px}
 .score-popup .reasons{text-align:left;font-size:12px;line-height:1.6;color:var(--dim);max-height:200px;overflow-y:auto}
+/* Progress bar */
+.progress-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px}
+.progress-bar-track{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:10px 0 8px}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:3px;transition:width .4s ease;width:0%}
+.progress-status{font-size:12px;color:var(--dim)}
+/* Skeleton loading */
+.skeleton{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:10px;overflow:hidden}
+.skel-line{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;margin-bottom:8px}
+.skel-line:last-child{margin-bottom:0}
+.skel-short{width:40%}.skel-med{width:70%}.skel-long{width:90%}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Auto-dismiss */
+.auto-dismiss{animation:fadeIn .3s ease,fadeOut .5s ease 3.5s forwards}
+@keyframes fadeOut{to{opacity:0;transform:translateY(-10px)}}
 </style>
 </head>
 <body data-theme="dark-blue">
@@ -229,17 +243,23 @@ function showPage(p){window.scrollTo(0,0);['opportunities','detail','analytics',
   const titles={opportunities:'Opportunities',detail:'Opportunity Detail',analytics:'Analytics',fieldreport:'Field Reports',profile:'Company Profile'};document.title=(titles[p]||'Dashboard')+' — ConstructBid AI';
   if(p==='opportunities'){loadOpps();renderPlan();loadCL()}if(p==='analytics')loadAnalytics();if(p==='profile'){loadCompany();renderBilling()}}
 // SAM
-async function refreshSAM(){const b=document.getElementById('sam-btn'),s=document.getElementById('sam-status');b.disabled=true;b.innerHTML='<span class="spinner"></span>Searching...';s.innerHTML='';try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});s.innerHTML='<div class="success-msg">Found '+d.fetched+' — kept '+d.added+'</div>';loadOpps()}catch(e){s.innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}b.disabled=false;b.innerHTML='🔄 SAM.gov'}
-async function clearExp(){try{const d=await api('/api/clear-expired',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'</div>';loadOpps()}catch(e){toast(e.message,'error')}}
-async function clearPass(){if(!confirm('Remove all red?'))return;try{const d=await api('/api/clear-passes',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg">Removed '+d.removed+'</div>';loadOpps()}catch(e){toast(e.message,'error')}}
+async function refreshSAM(){const b=document.getElementById('sam-btn'),s=document.getElementById('sam-status');b.disabled=true;b.innerHTML='<span class="spinner"></span>Scanning...';
+  s.innerHTML='<div class="progress-box"><div class="progress-status">🔍 Connecting to SAM.gov...</div><div class="progress-bar-track"><div class="progress-bar-fill" id="sam-progress" style="width:10%"></div></div></div>';
+  setTimeout(()=>{const p=document.getElementById('sam-progress');const ps=document.querySelector('.progress-status');if(p)p.style.width='30%';if(ps)ps.textContent='📡 Scanning your NAICS codes...'},800);
+  setTimeout(()=>{const p=document.getElementById('sam-progress');const ps=document.querySelector('.progress-status');if(p)p.style.width='60%';if(ps)ps.textContent='🎯 Scoring opportunities against your profile...'},2000);
+  try{const d=await api('/api/sam-refresh',{method:'POST',body:JSON.stringify({days_back:30,min_score:40})});const p=document.getElementById('sam-progress');const ps=document.querySelector('.progress-status');if(p)p.style.width='100%';if(ps)ps.textContent='✓ Complete!';setTimeout(()=>{s.innerHTML='<div class="success-msg auto-dismiss">Found '+d.fetched+' opportunities — kept '+d.added+' that match your profile</div>';setTimeout(()=>s.innerHTML='',4500);loadOpps()},500)}catch(e){s.innerHTML='<div class="error-msg auto-dismiss">'+esc(e.message)+'</div>';setTimeout(()=>s.innerHTML='',4500)}b.disabled=false;b.innerHTML='🔄 SAM.gov'}
+async function clearExp(){try{const d=await api('/api/clear-expired',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg auto-dismiss">Removed '+d.removed+' expired</div>';setTimeout(()=>document.getElementById('sam-status').innerHTML='',4500);loadOpps()}catch(e){toast(e.message,'error')}}
+async function clearPass(){if(!confirm('Remove all red?'))return;try{const d=await api('/api/clear-passes',{method:'POST'});document.getElementById('sam-status').innerHTML='<div class="success-msg auto-dismiss">Removed '+d.removed+' low-scoring</div>';setTimeout(()=>document.getElementById('sam-status').innerHTML='',4500);loadOpps()}catch(e){toast(e.message,'error')}}
 // Opps
-async function loadOpps(){try{opps=await api('/api/opportunities');filterOpps()}catch{}}
+async function loadOpps(){document.getElementById('opp-list').innerHTML='<div class="skeleton"><div class="skel-line skel-long"></div><div class="skel-line skel-med"></div><div class="skel-line skel-short"></div></div><div class="skeleton"><div class="skel-line skel-long"></div><div class="skel-line skel-med"></div><div class="skel-line skel-short"></div></div><div class="skeleton"><div class="skel-line skel-long"></div><div class="skel-line skel-short"></div></div>';try{opps=await api('/api/opportunities');filterOpps()}catch{document.getElementById('opp-list').innerHTML=''}}
 function filterOpps(){const q=(document.getElementById('search-input').value||'').toLowerCase();const fs=document.getElementById('filter-score').value;const fo=document.getElementById('filter-source').value;const ft=document.getElementById('filter-status').value;
-  filteredOpps=opps.filter(o=>{if(q&&!o.title.toLowerCase().includes(q)&&!(o.agency||'').toLowerCase().includes(q)&&!(o.naics||'').includes(q))return false;if(fs&&o.recommendation!==fs)return false;if(fo&&o.source!==fo)return false;if(ft&&o.status!==ft)return false;return true});renderStats();renderList();document.getElementById('opp-count').textContent=filteredOpps.length<opps.length?'Showing '+filteredOpps.length+' of '+opps.length:''}
+  filteredOpps=opps.filter(o=>{if(q&&!o.title.toLowerCase().includes(q)&&!(o.agency||'').toLowerCase().includes(q)&&!(o.naics||'').includes(q))return false;if(fs&&o.recommendation!==fs)return false;if(fo&&o.source!==fo)return false;if(ft&&o.status!==ft)return false;return true});renderStats();renderList();animateStats();document.getElementById('opp-count').textContent=filteredOpps.length<opps.length?'Showing '+filteredOpps.length+' of '+opps.length:''}
 function renderStats(){const all=opps;const p=all.filter(o=>o.recommendation==='PURSUE').length,r=all.filter(o=>o.recommendation==='REVIEW').length,sm=all.filter(o=>o.source==='sam.gov').length,vl=all.reduce((a,o)=>a+(o.value||0),0),w=all.filter(o=>o.outcome==='won').length;document.getElementById('stats-bar').innerHTML=stt(all.length,'Total','--accent')+stt(p,'Pursue','--green')+stt(r,'Review','--yellow')+stt(sm,'SAM','--accent2')+stt(w,'Won','--green')+stt('$'+(vl/1e6).toFixed(1)+'M','Pipeline','--text');
   // Pipeline briefing
   const br=document.getElementById('pipeline-briefing');if(br&&all.length>0){const today=new Date();const dueThisWeek=all.filter(o=>{if(!o.due_date)return false;const d=new Date(o.due_date);const diff=(d-today)/(1000*60*60*24);return diff>=0&&diff<=7});const pursueVal=all.filter(o=>o.recommendation==='PURSUE').reduce((a,o)=>a+(o.value||0),0);let msg='You have <span class="highlight">'+p+' opportunit'+(p===1?'y':'ies')+' worth pursuing</span>';if(pursueVal>0)msg+=', totaling <span class="highlight">$'+(pursueVal/1e6).toFixed(1)+'M</span>';msg+='.';if(dueThisWeek.length>0)msg+=' <span class="urgent">'+dueThisWeek.length+' bid'+(dueThisWeek.length>1?'s':'')+' due this week!</span>';else{const due2wk=all.filter(o=>{if(!o.due_date)return false;const diff=(new Date(o.due_date)-today)/(1000*60*60*24);return diff>=0&&diff<=14});if(due2wk.length>0)msg+=' '+due2wk.length+' due within 2 weeks.'}br.innerHTML='<div class="briefing">📋 '+msg+'</div>'}else if(br){br.innerHTML=''}}
-function stt(n,l,c){return'<div class="stat"><div class="stat-num" style="color:var('+c+')">'+n+'</div><div class="stat-label">'+l+'</div></div>'}
+function stt(n,l,c){const id='stat-'+l.toLowerCase().replace(/\s/g,'');return'<div class="stat"><div class="stat-num" style="color:var('+c+')" id="'+id+'">'+n+'</div><div class="stat-label">'+l+'</div></div>'}
+function animateStats(){document.querySelectorAll('.stat-num').forEach(el=>{const raw=el.textContent;if(raw.startsWith('$')){const num=parseFloat(raw.replace(/[$M]/g,''));animateNum(el,0,num,400,'$','M')}else{const num=parseInt(raw);if(!isNaN(num)&&num>0)animateNum(el,0,num,400,'','')}})}
+function animateNum(el,from,to,dur,pre,suf){const start=performance.now();const step=(ts)=>{const p=Math.min((ts-start)/dur,1);const ease=1-Math.pow(1-p,3);const cur=pre?(pre+(from+(to-from)*ease).toFixed(1)+suf):Math.round(from+(to-from)*ease);el.textContent=cur;if(p<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
 function sc(r){return r==='PURSUE'?'pursue':r==='REVIEW'?'review':'pass'}
 function bc(s){return s==='SDVOSB'?'badge-green':s==='Full & Open'?'badge-red':'badge-yellow'}
 function dueTag(d){if(!d)return'';const diff=(new Date(d)-new Date())/(1000*60*60*24);const cls=diff<0?'tag-urgent':diff<=7?'tag-urgent':diff<=14?'tag-soon':'';return'<span class="tag '+cls+'">'+( diff<0?'EXPIRED':diff<=7?'⚠ Due '+d:'Due '+d)+'</span>'}
