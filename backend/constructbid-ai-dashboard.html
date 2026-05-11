@@ -12,7 +12,7 @@
 [data-theme="midnight-purple"]{--bg:#0d0a1a;--surface:#15112b;--surface2:#1e1836;--border:#2d2450;--accent:#8b5cf6;--accent2:#a78bfa;--text:#e8e2f4;--dim:#7c6b9e;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
 [data-theme="slate"]{--bg:#0f1318;--surface:#181d25;--surface2:#1f2630;--border:#2a3344;--accent:#f59e0b;--accent2:#fbbf24;--text:#e2e6ec;--dim:#6b7990;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444}
 [data-theme="light"]{--bg:#f5f7fa;--surface:#fff;--surface2:#f0f2f5;--border:#e2e5ea;--accent:#3b82f6;--accent2:#0ea5e9;--text:#1a1f2e;--dim:#6b7280;--green:#16a34a;--yellow:#d97706;--red:#dc2626}
-*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+*{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}::-webkit-scrollbar{width:8px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--dim)}body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;animation:pageIn .3s ease}@keyframes pageIn{from{opacity:0}to{opacity:1}}
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
 .logo{display:flex;align-items:center;gap:10px}.logo-text{font-size:18px;font-weight:700}.logo-sub{font-size:11px;color:var(--accent2);font-weight:500;letter-spacing:1.5px;text-transform:uppercase}
 .header-right{display:flex;align-items:center;gap:8px}
@@ -30,7 +30,8 @@ h2{font-size:22px;font-weight:700;margin-bottom:4px}h3{font-size:16px;font-weigh
 .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;background:var(--surface2);color:var(--dim);margin-right:3px}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600}
 .badge-green{background:color-mix(in srgb,var(--green) 15%,transparent);color:var(--green)}.badge-yellow{background:color-mix(in srgb,var(--yellow) 15%,transparent);color:var(--yellow)}.badge-red{background:color-mix(in srgb,var(--red) 15%,transparent);color:var(--red)}
-.score-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'JetBrains Mono';border-width:3px;border-style:solid;flex-shrink:0}
+.score-circle{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:'JetBrains Mono';border-width:3px;border-style:solid;flex-shrink:0;transition:transform .2s,box-shadow .2s;cursor:pointer}
+.score-circle:hover{transform:scale(1.12);box-shadow:0 0 12px rgba(0,0,0,.2)}
 .score-lg{width:60px;height:60px;font-size:18px}
 .score-pursue{border-color:var(--green);color:var(--green)}.score-review{border-color:var(--yellow);color:var(--yellow)}.score-pass{border-color:var(--red);color:var(--red)}
 .opp-row{display:flex;justify-content:space-between;align-items:center}.opp-title{font-size:14px;font-weight:600;margin-bottom:4px}.opp-agency{font-size:11px;color:var(--dim);margin-bottom:5px}
@@ -39,7 +40,7 @@ h2{font-size:22px;font-weight:700;margin-bottom:4px}h3{font-size:16px;font-weigh
 .btn-primary{background:var(--accent);color:#fff}.btn-sam{background:linear-gradient(135deg,#059669,#06b6d4);color:#fff}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-ghost{background:transparent;color:var(--dim);border:none}
 .btn-danger{background:var(--red);color:#fff}.btn-upgrade{background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff}
-.btn:hover{opacity:.85}.btn:disabled{opacity:.5}
+.btn:hover{opacity:.85}.btn:disabled{opacity:.5}.btn:active:not(:disabled){transform:scale(.97)}
 .btn-voice{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:#fff}
 .btn-voice.recording{animation:pulse 1s infinite}
 .btn-sm{padding:6px 12px;font-size:11px}
@@ -47,7 +48,11 @@ h2{font-size:22px;font-weight:700;margin-bottom:4px}h3{font-size:16px;font-weigh
 @keyframes spin{to{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-right:6px}
 .label{font-size:11px;font-weight:600;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
-input,select,textarea{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:'Outfit';outline:none}
+input,select,textarea{width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:'Outfit';outline:none;transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 15%,transparent)}
+input::placeholder,textarea::placeholder{color:color-mix(in srgb,var(--dim) 60%,transparent)}
+::selection{background:color-mix(in srgb,var(--accent) 30%,transparent);color:var(--text)}
+html{scroll-behavior:smooth}
 textarea{font-family:'JetBrains Mono';font-size:13px;resize:vertical;min-height:100px;line-height:1.6}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.form-group{margin-bottom:14px}
 pre.output{position:relative;background:var(--surface2);border-radius:10px;padding:20px;font-size:13px;font-family:'JetBrains Mono';line-height:1.7;white-space:pre-wrap;word-break:break-word;border:1px solid var(--border);max-height:500px;overflow:auto}
@@ -66,7 +71,7 @@ a{color:var(--accent)}
 .voice-box{background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);border-radius:12px;padding:20px;margin-bottom:16px;text-align:center}
 .voice-transcript,.voice-results{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;font-size:13px;text-align:left}
 .auth-page{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 60px);padding:20px}
-.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:400px}
+.auth-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:36px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.2)}
 .auth-card h2{text-align:center;margin-bottom:8px;font-size:24px}.auth-card .subtitle{text-align:center;margin-bottom:20px}
 .auth-tabs{display:flex;gap:2px;background:var(--surface2);border-radius:10px;padding:3px;margin-bottom:20px}
 .auth-tabs button{flex:1;padding:9px;border-radius:8px;border:none;background:transparent;color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;font-family:'Outfit'}
@@ -144,6 +149,8 @@ a{color:var(--accent)}
 /* Card hover lift */
 .card-clickable{transition:border-color .2s,transform .15s,box-shadow .15s}
 .card-clickable:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.15)}
+nav button.active{position:relative}
+nav button.active::after{content:'';position:absolute;bottom:-2px;left:25%;right:25%;height:2px;background:var(--accent);border-radius:2px}
 /* Toast */
 .toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:300;animation:toastIn .3s ease;font-family:'Outfit';box-shadow:0 4px 20px rgba(0,0,0,.3)}
 .toast-success{background:var(--green);color:#fff}
@@ -223,7 +230,7 @@ a{color:var(--accent)}
 <div class="card" style="margin-bottom:16px"><h3>🎨 Theme</h3><div class="theme-grid"><div class="theme-swatch" data-t="dark-blue" style="background:linear-gradient(135deg,#0a0f1a,#3b82f6)" onclick="setTheme('dark-blue')"></div><div class="theme-swatch" data-t="dark-green" style="background:linear-gradient(135deg,#0a1410,#22c55e)" onclick="setTheme('dark-green')"></div><div class="theme-swatch" data-t="midnight-purple" style="background:linear-gradient(135deg,#0d0a1a,#8b5cf6)" onclick="setTheme('midnight-purple')"></div><div class="theme-swatch" data-t="slate" style="background:linear-gradient(135deg,#0f1318,#f59e0b)" onclick="setTheme('slate')"></div><div class="theme-swatch" data-t="light" style="background:linear-gradient(135deg,#f5f7fa,#3b82f6)" onclick="setTheme('light')"></div></div></div>
 <div class="voice-box"><h3 style="color:var(--accent)">🎤 Voice Setup</h3><p style="font-size:12px;color:var(--dim)">Describe your company — AI fills everything</p><button class="btn btn-voice" onclick="startVoice(this)" style="padding:12px 24px;font-size:14px">🎤 Start Speaking</button><div class="voice-transcript hidden" id="voice-transcript"></div><div class="voice-results hidden" id="voice-results"></div></div>
 <div class="card" id="company-form"></div><div class="card" style="margin-top:12px"><h3>Past Projects</h3><div id="projects-content"></div></div></div>
-<div class="dashboard-footer">ConstructBid AI v9 · © 2026 · Built for government contractors</div>
+<div class="dashboard-footer">ConstructBid AI v10 · © <script>document.write(new Date().getFullYear())</script> · Built for government contractors</div>
 </main>
 <script>
 const API=window.location.protocol==='file:'?'http://127.0.0.1:8000':window.location.origin;
@@ -316,7 +323,7 @@ async function parseVoice(text){const res=document.getElementById('voice-results
 async function applyVoice(){const p=window._vp;if(!p)return;if(p.name&&document.getElementById('co-name'))document.getElementById('co-name').value=p.name;if(p.services&&document.getElementById('co-services'))document.getElementById('co-services').value=p.services.join(', ');if(p.certifications&&document.getElementById('co-certs'))document.getElementById('co-certs').value=p.certifications.join(', ');if(p.regions&&document.getElementById('co-regions'))document.getElementById('co-regions').value=p.regions.join(', ');if(p.bonding_capacity&&document.getElementById('co-bonding'))document.getElementById('co-bonding').value=p.bonding_capacity;if(p.naics&&document.getElementById('co-naics'))document.getElementById('co-naics').value=p.naics.join(', ');await saveCompany();document.getElementById('voice-results').innerHTML+='<br><span style="color:var(--green)">✓ Saved!</span>'}
 function voiceFR(btn){if(vrec){vrec.stop();vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak';return}const r=getSR();if(!r)return;vrec=r;btn.classList.add('recording');btn.textContent='⏹ Stop';const ta=document.getElementById('fr-notes');let ex=ta.value;r.onresult=e=>{let t='';for(let i=0;i<e.results.length;i++)t+=e.results[i][0].transcript+' ';ta.value=ex+t};r.onerror=r.onend=()=>{vrec=null;btn.classList.remove('recording');btn.textContent='🎤 Speak'};r.start()}
 // UEI Lookup
-async function lookupUEI(){const uei=v('uei-input').trim();if(!uei)return toast('Enter a UEI number','error');const btn=document.getElementById('uei-btn');btn.innerHTML='<span class="spinner"></span>';btn.disabled=true;try{const d=await api('/api/lookup-uei',{method:'POST',body:JSON.stringify({uei})});if(d.found){let h='<div class="uei-result"><strong style="color:var(--green)">✓ Found: '+esc(d.name)+'</strong><br>';if(d.naics&&d.naics.length)h+='NAICS: '+d.naics.join(', ')+'<br>';if(d.certifications&&d.certifications.length)h+='Certs: '+d.certifications.join(', ')+'<br>';if(d.state)h+='State: '+d.state+'<br>';h+='<br><button class="btn btn-primary btn-sm" onclick="applyUEI()">✅ Apply to Profile</button></div>';document.getElementById('uei-result').innerHTML=h;window._uei=d}else{document.getElementById('uei-result').innerHTML='<div style="color:var(--yellow);margin-top:8px;font-size:13px">⚠ UEI not found automatically. This can happen if the SAM.gov entity API is temporarily unavailable. You can enter your company info manually in the fields below instead.</div>'}}catch(e){document.getElementById('uei-result').innerHTML='<div style="color:var(--yellow);margin-top:8px;font-size:13px">⚠ Could not connect to SAM.gov right now. No worries — just enter your company info manually below.</div>'}btn.innerHTML='🔍 Look Up';btn.disabled=false}
+async function lookupUEI(){const uei=v('uei-input').trim();if(!uei)return toast('Enter a UEI number','error');const btn=document.getElementById('uei-btn');btn.innerHTML='<span class="spinner"></span> Searching SAM.gov...';btn.disabled=true;try{const d=await api('/api/lookup-uei',{method:'POST',body:JSON.stringify({uei})});if(d.found){let h='<div class="uei-result"><div style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:10px">✓ Found: '+esc(d.name)+'</div>';if(d.naics&&d.naics.length)h+='<div style="margin-bottom:6px"><span style="color:var(--dim);font-weight:600">NAICS Codes:</span> '+d.naics.join(', ')+'</div>';if(d.certifications&&d.certifications.length)h+='<div style="margin-bottom:6px"><span style="color:var(--dim);font-weight:600">Certifications:</span> <span style="color:var(--green)">'+d.certifications.join(', ')+'</span></div>';if(d.state)h+='<div style="margin-bottom:10px"><span style="color:var(--dim);font-weight:600">State:</span> '+d.state+'</div>';h+='<button class="btn btn-primary btn-sm" onclick="applyUEI()">✅ Apply to Profile</button></div>';document.getElementById('uei-result').innerHTML=h;window._uei=d}else{document.getElementById('uei-result').innerHTML='<div style="color:var(--yellow);margin-top:8px;font-size:13px">⚠ UEI not found automatically. This can happen if the SAM.gov entity API is temporarily unavailable. You can enter your company info manually in the fields below instead.</div>'}}catch(e){document.getElementById('uei-result').innerHTML='<div style="color:var(--yellow);margin-top:8px;font-size:13px">⚠ Could not connect to SAM.gov right now. No worries — just enter your company info manually below.</div>'}btn.innerHTML='🔍 Look Up';btn.disabled=false}
 function applyUEI(){const d=window._uei;if(!d)return;if(d.name&&document.getElementById('co-name'))document.getElementById('co-name').value=d.name;if(d.naics&&d.naics.length&&document.getElementById('co-naics'))document.getElementById('co-naics').value=d.naics.join(', ');if(d.certifications&&d.certifications.length&&document.getElementById('co-certs'))document.getElementById('co-certs').value=d.certifications.join(', ');if(d.regions&&d.regions.length&&document.getElementById('co-regions'))document.getElementById('co-regions').value=d.regions.join(', ');document.getElementById('uei-result').innerHTML+='<br><span style="color:var(--green)">✓ Applied! Review below and Save.</span>'}
 // Company
 function getCD(){return{name:v('co-name'),services:csv('co-services'),certifications:csv('co-certs'),naics:csv('co-naics'),bonding_capacity:parseInt(v('co-bonding'))||0,regions:csv('co-regions').map(s=>s.toUpperCase()),sam_api_key:v('co-samkey').trim(),notify_email:v('co-notify-email').trim(),notify_phone:v('co-notify-phone').trim(),notify_enabled:document.getElementById('co-notify-on').checked,notify_min_score:parseInt(v('co-notify-score'))||75,theme:document.body.getAttribute('data-theme')||'dark-blue'}}
