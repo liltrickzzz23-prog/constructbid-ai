@@ -692,7 +692,12 @@ async def lookup_uei(data: UEILookup, request: Request):
         raise HTTPException(400, "Enter a valid UEI (12 characters)")
     try:
         async with httpx.AsyncClient(timeout=20) as c:
-            r = await c.get("https://api.sam.gov/entity-information/v2/entities", params={"ueiSAM": uei, "api_key": env("SAM_ENTITY_API_KEY") or env("SAM_API_KEY") or ""}, headers={"Accept": "application/json"})
+            se=SessionLocal()
+            try:
+                comp=se.query(Company).filter(Company.id==gu(request)["company_id"]).first()
+                sam_key=(comp.sam_api_key if comp else "") or env("SAM_ENTITY_API_KEY") or ""
+            finally:se.close()
+            r = await c.get("https://api.sam.gov/entity-information/v2/entities", params={"ueiSAM": uei, "api_key": sam_key}, headers={"Accept": "application/json"})
             if r.status_code == 200:
                 entities = r.json().get("entityData", [])
                 if entities:
@@ -701,8 +706,8 @@ async def lookup_uei(data: UEILookup, request: Request):
                     phys = core.get("physicalAddress", {}) or {}; state = phys.get("stateOrProvinceCode", "")
                     naics_list = [str(n.get("naicsCode", "")) for n in (assertions.get("goodsAndServices", {}).get("naicsList", []) or []) if n.get("naicsCode")]
                     certs = []
-                    for b in (assertions.get("businessTypes", {}).get("businessTypeList", []) or []):
-                        bt = b.get("businessType", "")
+                    for b in (core.get("businessTypes", {}).get("businessTypeList", []) or []):
+                        bt = b.get("businessTypeDesc", "")
                         if "Service Disabled Veteran" in bt: certs.append("SDVOSB")
                         elif "Veteran Owned" in bt: certs.append("VOSB")
                         elif "8(a)" in bt: certs.append("8(a)")
