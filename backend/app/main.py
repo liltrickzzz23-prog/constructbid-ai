@@ -708,11 +708,12 @@ async def lookup_uei(data: UEILookup, request: Request):
                     certs = []
                     for b in (core.get("businessTypes", {}).get("businessTypeList", []) or []):
                         bt = b.get("businessTypeDesc", "")
-                        if "Service Disabled Veteran" in bt: certs.append("SDVOSB")
-                        elif "Veteran Owned" in bt: certs.append("VOSB")
+                        btl = bt.lower().replace("-"," ")
+                        if "service disabled veteran" in btl: certs.append("SDVOSB")
+                        elif "veteran" in btl and "owned" in btl: certs.append("VOSB")
                         elif "8(a)" in bt: certs.append("8(a)")
-                        elif "HUBZone" in bt: certs.append("HUBZone")
-                        elif "Woman Owned" in bt: certs.append("WOSB")
+                        elif "hubzone" in btl: certs.append("HUBZone")
+                        elif "woman owned" in btl: certs.append("WOSB")
                     return {"found": True, "name": name, "uei": uei, "cage": reg.get("cageCode", ""), "state": state, "naics": naics_list, "certifications": list(set(certs)), "regions": [state] if state else []}
             return {"found": False, "message": "UEI not found. Check the number."}
     except Exception as ex:
