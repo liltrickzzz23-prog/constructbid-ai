@@ -60,6 +60,12 @@ def check_sub(c):
     if s=="trial" and c.trial_ends_at:return datetime.utcnow()<c.trial_ends_at
     if s=="trial":return True
     return False
+def require_sub(request):
+    u=gu(request);se=SessionLocal()
+    try:
+        c=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not c or not check_sub(c):raise HTTPException(403,"Your free trial has ended. Upgrade to Pro to continue using this feature.")
+    finally:se.close()
 def plan_info(c):
     if not c:return{"plan_status":"trial"}
     s=c.plan_status or"trial";i={"plan_status":s}
