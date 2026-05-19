@@ -690,6 +690,24 @@ if __name__=="__main__":
 class UEILookup(BaseModel):
     uei: str
 
+@app.post("/api/update-account")
+async def update_account(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        user=se.query(User).filter(User.id==u["user_id"]).first()
+        if not user:raise HTTPException(404,"User not found")
+        d=await request.json()
+        if d.get("email"):
+            existing=se.query(User).filter(User.email==d["email"]).first()
+            if existing and existing.id!=user.id:raise HTTPException(400,"Email already in use")
+            user.email=d["email"]
+        if d.get("password"):
+            if len(d["password"])<6:raise HTTPException(400,"Password must be 6+ characters")
+            user.password_hash=bcrypt.hashpw(d["password"].encode(),bcrypt.gensalt()).decode()
+        se.commit()
+        return{"ok":True}
+    finally:se.close()
+
 @app.post("/api/lookup-uei")
 async def lookup_uei(data: UEILookup, request: Request):
     gu(request)
