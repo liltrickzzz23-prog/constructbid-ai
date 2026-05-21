@@ -720,11 +720,10 @@ async def award_history(request: Request):
             filters = {"time_period": [{"start_date": "2024-01-01", "end_date": "2026-12-31"}]}
             if naics:
                 filters["naics_codes"] = [naics]
-            if agency:
-                agency_short = agency.split(",")[0].strip()[:50]
-                filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": agency_short}]
+            # Skip agency filter - SAM.gov names don't match USASpending names
+            # Search by NAICS only for reliable results
             body = {
-                "filters": filters,
+                "filters": {**filters, "award_type_codes": ["A", "B", "C", "D"]},
                 "fields": ["Award ID", "Recipient Name", "Award Amount", "Start Date", "End Date", "Awarding Agency", "NAICS Code", "Award Type", "Description"],
                 "limit": 15,
                 "order": "desc",
