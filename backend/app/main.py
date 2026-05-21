@@ -708,6 +708,51 @@ async def update_account(request: Request):
         return{"ok":True}
     finally:se.close()
 
+@app.post("/api/award-history")
+async def award_history(request: Request):
+    gu(request)
+    d = await request.json()
+    naics = d.get("naics", "")
+    agency = d.get("agency", "")
+    keyword = d.get("keyword", "")
+    try:
+        async with httpx.AsyncClient(timeout=30) as c:
+            filters = {"time_period": [{"start_date": "2024-01-01", "end_date": "2026-12-31"}]}
+            if naics:
+                filters["naics_codes"] = [naics]
+            if agency:
+                agency_short = agency.split(",")[0].strip()[:50]
+                filters["agencies"] = [{"type": "awarding", "tier": "toptier", "name": agency_short}]
+            body = {
+                "filters": filters,
+                "fields": ["Award ID", "Recipient Name", "Award Amount", "Start Date", "End Date", "Awarding Agency", "NAICS Code", "Award Type", "Description"],
+                "limit": 15,
+                "order": "desc",
+                "sort": "Award Amount",
+                "subawards": False
+            }
+            r = await c.post("https://api.usaspending.gov/api/v2/search/spending_by_award/", json=body)
+            if r.status_code == 200:
+                data = r.json()
+                results = []
+                for a in data.get("results", []):
+                    results.append({
+                        "award_id": a.get("Award ID", ""),
+                        "recipient": a.get("Recipient Name", ""),
+                        "amount": a.get("Award Amount", 0),
+                        "start_date": a.get("Start Date", ""),
+                        "end_date": a.get("End Date", ""),
+                        "agency": a.get("Awarding Agency", ""),
+                        "naics": a.get("NAICS Code", ""),
+                        "type": a.get("Award Type", ""),
+                        "description": (a.get("Description", "") or "")[:200]
+                    })
+                total = data.get("page_metadata", {}).get("total", 0)
+                return {"results": results, "total": total}
+            return {"results": [], "total": 0}
+    except Exception as ex:
+        return {"results": [], "total": 0, "error": str(ex)[:100]}
+
 @app.post("/api/lookup-uei")
 async def lookup_uei(data: UEILookup, request: Request):
     gu(request)
