@@ -752,6 +752,50 @@ async def update_account(request: Request):
         return{"ok":True}
     finally:se.close()
 
+@app.get("/api/saved-searches")
+async def get_saved_searches(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        searches=se.query(SavedSearch).filter(SavedSearch.company_id==u["company_id"]).order_by(SavedSearch.created_at.desc()).all()
+        return [{"id":s.id,"name":s.name,"filters":s.filters,"alert_enabled":s.alert_enabled,"created_at":s.created_at.isoformat() if s.created_at else ""} for s in searches]
+    finally:se.close()
+
+@app.post("/api/saved-searches")
+async def create_saved_search(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        d=await request.json()
+        import uuid as uu
+        sid=uu.uuid4().hex[:12]
+        ss=SavedSearch(id=sid,company_id=u["company_id"],name=d.get("name","Untitled Search"),filters=d.get("filters",{}),alert_enabled=d.get("alert_enabled",False))
+        se.add(ss);se.commit()
+        return{"ok":True,"id":sid}
+    finally:se.close()
+
+@app.delete("/api/saved-searches/{sid}")
+async def delete_saved_search(sid: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        ss=se.query(SavedSearch).filter(SavedSearch.id==sid,SavedSearch.company_id==u["company_id"]).first()
+        if not ss:raise HTTPException(404,"Search not found")
+        se.delete(ss);se.commit()
+        return{"ok":True}
+    finally:se.close()
+
+@app.put("/api/saved-searches/{sid}")
+async def update_saved_search(sid: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        ss=se.query(SavedSearch).filter(SavedSearch.id==sid,SavedSearch.company_id==u["company_id"]).first()
+        if not ss:raise HTTPException(404,"Search not found")
+        d=await request.json()
+        if "name" in d:ss.name=d["name"]
+        if "filters" in d:ss.filters=d["filters"]
+        if "alert_enabled" in d:ss.alert_enabled=d["alert_enabled"]
+        se.commit()
+        return{"ok":True}
+    finally:se.close()
+
 @app.post("/api/award-history")
 async def award_history(request: Request):
     gu(request)

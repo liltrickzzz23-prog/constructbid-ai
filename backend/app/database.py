@@ -24,6 +24,15 @@ class User(Base):
     role = Column(String, default="admin")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class SavedSearch(Base):
+    __tablename__ = "saved_searches"
+    id = Column(String, primary_key=True)
+    company_id = Column(String, nullable=False)
+    name = Column(String, default="")
+    filters = Column(JSON, default=dict)
+    alert_enabled = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class Company(Base):
     __tablename__ = "companies"
     id = Column(String, primary_key=True)
