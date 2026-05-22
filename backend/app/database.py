@@ -21,6 +21,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     name = Column(String, default="")
     company_id = Column(String, nullable=False)
+    role = Column(String, default="admin")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Company(Base):

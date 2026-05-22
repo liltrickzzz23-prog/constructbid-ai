@@ -690,6 +690,50 @@ if __name__=="__main__":
 class UEILookup(BaseModel):
     uei: str
 
+@app.get("/api/team")
+async def get_team(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        members=se.query(User).filter(User.company_id==u["company_id"]).all()
+        return [{"id":m.id,"email":m.email,"name":m.name,"role":getattr(m,"role","admin"),"created_at":m.created_at.isoformat() if m.created_at else ""} for m in members]
+    finally:se.close()
+
+@app.post("/api/invite-member")
+async def invite_member(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        admin=se.query(User).filter(User.id==u["user_id"]).first()
+        if not admin or getattr(admin,"role","admin")!="admin":raise HTTPException(403,"Only admins can invite members")
+        d=await request.json()
+        email=d.get("email","").lower().strip()
+        name=d.get("name","")
+        password=d.get("password","")
+        if not email or not password:raise HTTPException(400,"Email and password required")
+        if len(password)<6:raise HTTPException(400,"Password must be 6+ characters")
+        existing=se.query(User).filter(User.email==email).first()
+        if existing:raise HTTPException(400,"Email already in use")
+        import uuid as uu
+        mid=uu.uuid4().hex[:12]
+        member=User(id=mid,email=email,password_hash=hp(password),name=name,company_id=u["company_id"],role="member")
+        se.add(member);se.commit()
+        return{"ok":True,"id":mid,"email":email}
+    finally:se.close()
+
+@app.post("/api/remove-member")
+async def remove_member(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        admin=se.query(User).filter(User.id==u["user_id"]).first()
+        if not admin or getattr(admin,"role","admin")!="admin":raise HTTPException(403,"Only admins can remove members")
+        d=await request.json()
+        mid=d.get("member_id","")
+        if mid==u["user_id"]:raise HTTPException(400,"Cannot remove yourself")
+        member=se.query(User).filter(User.id==mid,User.company_id==u["company_id"]).first()
+        if not member:raise HTTPException(404,"Member not found")
+        se.delete(member);se.commit()
+        return{"ok":True}
+    finally:se.close()
+
 @app.post("/api/update-account")
 async def update_account(request: Request):
     u=gu(request);se=SessionLocal()
