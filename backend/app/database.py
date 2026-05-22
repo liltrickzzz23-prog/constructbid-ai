@@ -24,6 +24,18 @@ class User(Base):
     role = Column(String, default="admin")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Document(Base):
+    __tablename__ = "documents"
+    id = Column(String, primary_key=True)
+    company_id = Column(String, nullable=False)
+    name = Column(String, default="")
+    category = Column(String, default="other")
+    notes = Column(Text, default="")
+    file_url = Column(String, default="")
+    file_data = Column(Text, default="")
+    file_type = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class SavedSearch(Base):
     __tablename__ = "saved_searches"
     id = Column(String, primary_key=True)

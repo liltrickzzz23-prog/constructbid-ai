@@ -752,6 +752,45 @@ async def update_account(request: Request):
         return{"ok":True}
     finally:se.close()
 
+@app.get("/api/documents")
+async def get_documents(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        docs=se.query(Document).filter(Document.company_id==u["company_id"]).order_by(Document.created_at.desc()).all()
+        return [{"id":d.id,"name":d.name,"category":d.category,"notes":d.notes,"file_type":d.file_type,"created_at":d.created_at.isoformat() if d.created_at else ""} for d in docs]
+    finally:se.close()
+
+@app.post("/api/documents")
+async def add_document(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        d=await request.json()
+        import uuid as uu
+        did=uu.uuid4().hex[:12]
+        doc=Document(id=did,company_id=u["company_id"],name=d.get("name","Untitled"),category=d.get("category","other"),notes=d.get("notes",""),file_data=d.get("file_data",""),file_type=d.get("file_type",""))
+        se.add(doc);se.commit()
+        return{"ok":True,"id":did}
+    finally:se.close()
+
+@app.get("/api/documents/{did}")
+async def get_document(did: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        doc=se.query(Document).filter(Document.id==did,Document.company_id==u["company_id"]).first()
+        if not doc:raise HTTPException(404,"Document not found")
+        return{"id":doc.id,"name":doc.name,"category":doc.category,"notes":doc.notes,"file_data":doc.file_data,"file_type":doc.file_type}
+    finally:se.close()
+
+@app.delete("/api/documents/{did}")
+async def delete_document(did: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        doc=se.query(Document).filter(Document.id==did,Document.company_id==u["company_id"]).first()
+        if not doc:raise HTTPException(404,"Document not found")
+        se.delete(doc);se.commit()
+        return{"ok":True}
+    finally:se.close()
+
 @app.get("/api/saved-searches")
 async def get_saved_searches(request: Request):
     u=gu(request);se=SessionLocal()
