@@ -9,7 +9,7 @@ from typing import Optional
 import json,os,uuid,httpx,asyncio,re,base64,bcrypt,jwt,stripe
 from datetime import datetime,date,timedelta
 from contextlib import asynccontextmanager
-from app.database import init_db,SessionLocal,User,Company,Opportunity,Project
+from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document
 
 JWT_SECRET=os.environ.get("JWT_SECRET","constructbid-secret")
 STRIPE_SECRET=os.environ.get("STRIPE_SECRET_KEY","")
