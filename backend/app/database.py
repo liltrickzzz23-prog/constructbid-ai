@@ -24,6 +24,21 @@ class User(Base):
     role = Column(String, default="admin")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class Partner(Base):
+    __tablename__ = "partners"
+    id = Column(String, primary_key=True)
+    company_id = Column(String, nullable=False)
+    name = Column(String, default="")
+    contact_name = Column(String, default="")
+    email = Column(String, default="")
+    phone = Column(String, default="")
+    naics = Column(JSON, default=list)
+    certifications = Column(JSON, default=list)
+    location = Column(String, default="")
+    services = Column(Text, default="")
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 class Document(Base):
     __tablename__ = "documents"
     id = Column(String, primary_key=True)

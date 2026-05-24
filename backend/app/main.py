@@ -9,7 +9,7 @@ from typing import Optional
 import json,os,uuid,httpx,asyncio,re,base64,bcrypt,jwt,stripe
 from datetime import datetime,date,timedelta
 from contextlib import asynccontextmanager
-from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document
+from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document,Partner
 
 JWT_SECRET=os.environ.get("JWT_SECRET","constructbid-secret")
 STRIPE_SECRET=os.environ.get("STRIPE_SECRET_KEY","")
@@ -749,6 +749,36 @@ async def update_account(request: Request):
             if len(d["password"])<6:raise HTTPException(400,"Password must be 6+ characters")
             user.password_hash=bcrypt.hashpw(d["password"].encode(),bcrypt.gensalt()).decode()
         se.commit()
+        return{"ok":True}
+    finally:se.close()
+
+@app.get("/api/partners")
+async def get_partners(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        partners=se.query(Partner).filter(Partner.company_id==u["company_id"]).order_by(Partner.created_at.desc()).all()
+        return [{"id":p.id,"name":p.name,"contact_name":p.contact_name,"email":p.email,"phone":p.phone,"naics":p.naics or[],"certifications":p.certifications or[],"location":p.location,"services":p.services,"notes":p.notes} for p in partners]
+    finally:se.close()
+
+@app.post("/api/partners")
+async def add_partner(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        d=await request.json()
+        import uuid as uu
+        pid=uu.uuid4().hex[:12]
+        p=Partner(id=pid,company_id=u["company_id"],name=d.get("name",""),contact_name=d.get("contact_name",""),email=d.get("email",""),phone=d.get("phone",""),naics=d.get("naics",[]),certifications=d.get("certifications",[]),location=d.get("location",""),services=d.get("services",""),notes=d.get("notes",""))
+        se.add(p);se.commit()
+        return{"ok":True,"id":pid}
+    finally:se.close()
+
+@app.delete("/api/partners/{pid}")
+async def delete_partner(pid: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        p=se.query(Partner).filter(Partner.id==pid,Partner.company_id==u["company_id"]).first()
+        if not p:raise HTTPException(404,"Partner not found")
+        se.delete(p);se.commit()
         return{"ok":True}
     finally:se.close()
 
