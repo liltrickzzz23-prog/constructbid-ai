@@ -428,7 +428,7 @@ User question: {req.question}"""
         async with httpx.AsyncClient(timeout=30) as c:
             r=await c.post("https://api.anthropic.com/v1/messages",
                 headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},
-                json={"model":"claude-sonnet-4-20250514","max_tokens":800,"messages":[{"role":"user","content":prompt}]})
+                json={"model":"claude-sonnet-4-6","max_tokens":800,"messages":[{"role":"user","content":prompt}]})
             if r.status_code==200:
                 txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
                 return{"answer":txt,"score":sc["score"],"recommendation":sc["recommendation"]}
@@ -623,7 +623,7 @@ Write only the proposal section content. No preamble, no meta-commentary."""
         async with httpx.AsyncClient(timeout=45) as client:
             r=await client.post("https://api.anthropic.com/v1/messages",
                 headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},
-                json={"model":"claude-sonnet-4-20250514","max_tokens":1500,"messages":[{"role":"user","content":prompt}]})
+                json={"model":"claude-sonnet-4-6","max_tokens":1500,"messages":[{"role":"user","content":prompt}]})
             if r.status_code==200:
                 txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
                 return{"section":req.section,"content":txt}
@@ -728,7 +728,7 @@ async def voice(data:VoiceIn,request:Request):
     if ak:
         try:
             async with httpx.AsyncClient(timeout=30) as c:
-                r=await c.post("https://api.anthropic.com/v1/messages",headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},json={"model":"claude-sonnet-4-20250514","max_tokens":1000,"messages":[{"role":"user","content":VP+"\n\nTranscript:\n"+data.transcript}]})
+                r=await c.post("https://api.anthropic.com/v1/messages",headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},json={"model":"claude-sonnet-4-6","max_tokens":1000,"messages":[{"role":"user","content":VP+"\n\nTranscript:\n"+data.transcript}]})
                 if r.status_code==200:
                     txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
                     txt=re.sub(r'^```(?:json)?\s*','',txt.strip());txt=re.sub(r'\s*```$','',txt)
