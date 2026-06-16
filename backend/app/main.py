@@ -32,7 +32,7 @@ def o2d(o):
     "set_aside":o.set_aside or"","scope":o.scope or"","status":o.status or"new","source":o.source or"manual",
     "notes":o.notes or"","outcome":o.outcome or"","outcome_value":o.outcome_value or 0,
     "sam_notice_id":o.sam_notice_id,"sam_sol_number":o.sam_sol_number or"",
-    "sam_posted_date":o.sam_posted_date or"","sam_type":o.sam_type or"","sam_link":o.sam_link or""}
+    "sam_posted_date":o.sam_posted_date or"","sam_type":o.sam_type or"","sam_link":o.sam_link or"","poc_name":getattr(o,"poc_name","")or"","poc_email":getattr(o,"poc_email","")or"","poc_phone":getattr(o,"poc_phone","")or""}
 def p2d(p):
     return{"id":p.id,"company_id":p.company_id,"name":p.name or"","client":p.client or"",
     "value":p.value or 0,"year":p.year or 0,"scope":p.scope or""}
@@ -219,7 +219,12 @@ async def fetch_sam(company,days=30):
                     aw=s.get("award",{})or{}
                     try:v=float(aw.get("amount",0)or 0)
                     except:v=0
-                    opps.append({"id":f"sam-{uuid.uuid4().hex[:8]}","company_id":company["id"],"title":(s.get("title")or"Untitled").strip(),"agency":s.get("fullParentPathName","")or"","naics":s.get("naicsCode")or naics,"location":ps or"","due_date":dd,"value":v,"set_aside":sa,"scope":(s.get("description","")or s.get("title","")or"")[:2000],"status":"new","source":"sam.gov","sam_notice_id":nid,"sam_sol_number":s.get("solicitationNumber",""),"sam_posted_date":s.get("postedDate",""),"sam_type":s.get("type",""),"sam_link":f"https://sam.gov/opp/{nid}/view" if nid else ""})
+                    pocs=s.get("pointOfContact",[])or[]
+                    poc=pocs[0] if pocs else {}
+                    poc_name=(poc.get("fullName") or "") if isinstance(poc,dict) else ""
+                    poc_email=(poc.get("email") or "") if isinstance(poc,dict) else ""
+                    poc_phone=(poc.get("phone") or "") if isinstance(poc,dict) else ""
+                    opps.append({"id":f"sam-{uuid.uuid4().hex[:8]}","company_id":company["id"],"title":(s.get("title")or"Untitled").strip(),"agency":s.get("fullParentPathName","")or"","naics":s.get("naicsCode")or naics,"location":ps or"","due_date":dd,"value":v,"set_aside":sa,"scope":(s.get("description","")or s.get("title","")or"")[:2000],"status":"new","source":"sam.gov","sam_notice_id":nid,"sam_sol_number":s.get("solicitationNumber",""),"sam_posted_date":s.get("postedDate",""),"sam_type":s.get("type",""),"sam_link":f"https://sam.gov/opp/{nid}/view" if nid else "","poc_name":poc_name,"poc_email":poc_email,"poc_phone":poc_phone})
             except Exception as e:print(f"SAM error: {e}")
     return opps
 

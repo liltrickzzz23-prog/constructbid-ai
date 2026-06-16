@@ -104,6 +104,9 @@ class Opportunity(Base):
     sam_posted_date = Column(String, default="")
     sam_type = Column(String, default="")
     sam_link = Column(String, default="")
+    poc_name = Column(String, default="")
+    poc_email = Column(String, default="")
+    poc_phone = Column(String, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Project(Base):
