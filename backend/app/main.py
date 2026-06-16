@@ -536,12 +536,18 @@ async def sam_refresh(req:SAMReq,request:Request):
         if not c:raise HTTPException(404)
         cd=c2d(c)
         if not cd.get("sam_api_key"):raise HTTPException(400,"SAM.gov API key not set.")
-        old=se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).count()
-        se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).delete();se.commit()
     finally:se.close()
-    new=await fetch_sam(cd,req.days_back);scored=[];added=0
+    # Fetch FIRST, before deleting anything
+    new=await fetch_sam(cd,req.days_back)
+    # SAFEGUARD: if the fetch returned nothing (throttled key, API error, etc.),
+    # do NOT wipe existing opportunities. Keep what the user already has.
+    if not new:
+        return{"cleared":0,"fetched":0,"added":0,"message":"No new results from SAM.gov right now (this can happen if the daily API limit was reached). Your existing opportunities were kept. Auto-refresh runs every 6 hours."}
+    scored=[];added=0
     se=SessionLocal()
     try:
+        old=se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).count()
+        se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).delete()
         for o in new:
             s=score(o,cd)
             if s["score"]>=req.min_score:scored.append({**o,**s});se.add(Opportunity(**o));added+=1
