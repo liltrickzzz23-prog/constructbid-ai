@@ -566,16 +566,71 @@ def clear_pass(request:Request):
         se.commit();return{"removed":rm}
     finally:se.close()
 
+SECTION_GUIDE={
+    "executive":"an Executive Summary that opens with the agency's mission need, states how this company uniquely solves it, and highlights 2-3 concrete differentiators. Avoid generic 'we are pleased to submit' filler.",
+    "technical":"a Technical Approach broken into clear phases. For EACH major task, state HOW the work will be done AND WHY that approach reduces risk or delivers value to the agency's mission. Never just restate the scope back.",
+    "pastPerformance":"a Past Performance narrative. For each project, connect what was delivered to the OUTCOME and relevance to this specific opportunity. If no past projects exist, write a brief framework the contractor can fill in.",
+    "staffing":"a Staffing Plan describing key roles, the qualifications that matter for THIS contract, and why this team structure reduces performance risk for the agency.",
+    "compliance":"a Compliance summary mapping the company's certifications, NAICS, bonding, and licenses to the solicitation requirements, noting any gaps to address."}
+
 @app.post("/api/proposal")
-def proposal(req:PropReq,request:Request):
+async def proposal(req:PropReq,request:Request):
     u=gu(request);se=SessionLocal()
     try:
         o=se.query(Opportunity).filter(Opportunity.id==req.opportunity_id,Opportunity.company_id==u["company_id"]).first()
         if not o:raise HTTPException(404)
         c=se.query(Company).filter(Company.id==u["company_id"]).first()
         ps=[p2d(p) for p in se.query(Project).filter(Project.company_id==u["company_id"]).all()]
-        return{"section":req.section,"content":gen_prop(req.section,o2d(o),c2d(c) if c else{},ps)}
+        od=o2d(o);cd=c2d(c) if c else{}
     finally:se.close()
+
+    ak=env("ANTHROPIC_API_KEY")
+    if not ak:
+        return{"section":req.section,"content":gen_prop(req.section,od,cd,ps)}
+
+    guide=SECTION_GUIDE.get(req.section,"a clear, professional proposal section")
+    past_txt="\n".join([f"- {p['name']} ({p['client']}, {p.get('year','')}): ${p.get('value',0):,.0f} — {p.get('scope','')}" for p in ps]) or "None on file yet."
+    prompt=f"""You are an expert federal proposal writer who has won competitive government contracts. Write {guide}
+
+CRITICAL RULES (from former Contracting Officers and evaluators):
+1. Do NOT echo or restate the RFP/scope back at the evaluator. They wrote it and have read it a hundred times. Show how the company will EXECUTE it.
+2. For every technical claim, connect the HOW to the WHY — tie specifications and methods to mission impact, risk reduction, or measurable outcomes. Source selection boards are not experts in the contractor's field; spell out why each choice matters.
+3. Be specific and differentiated, but stay within what a risk-averse evaluator expects to see. Innovative is good; alien is penalized.
+4. Write in confident, professional prose. Mark any company-specific detail the contractor must fill in with [BRACKETS].
+
+COMPANY:
+- Name: {cd.get('name','')}
+- Certifications: {', '.join(cd.get('certifications',[]))}
+- NAICS: {', '.join(cd.get('naics',[]))}
+- Services: {', '.join(cd.get('services',[]))}
+- Bonding: ${cd.get('bonding_capacity',0)/1e6:.1f}M
+- Regions: {', '.join(cd.get('regions',[]))}
+
+OPPORTUNITY:
+- Title: {od.get('title','')}
+- Agency: {od.get('agency','')}
+- NAICS: {od.get('naics','')}
+- Set-Aside: {od.get('set_aside','')}
+- Value: ${od.get('value',0)/1e6:.1f}M
+- Scope: {od.get('scope','')[:1500]}
+
+PAST PERFORMANCE ON FILE:
+{past_txt}
+
+Write only the proposal section content. No preamble, no meta-commentary."""
+
+    try:
+        async with httpx.AsyncClient(timeout=45) as client:
+            r=await client.post("https://api.anthropic.com/v1/messages",
+                headers={"x-api-key":ak,"anthropic-version":"2023-06-01","content-type":"application/json"},
+                json={"model":"claude-sonnet-4-20250514","max_tokens":1500,"messages":[{"role":"user","content":prompt}]})
+            if r.status_code==200:
+                txt="".join(b["text"] for b in r.json().get("content",[]) if b.get("type")=="text")
+                return{"section":req.section,"content":txt}
+            else:
+                return{"section":req.section,"content":gen_prop(req.section,od,cd,ps)}
+    except Exception:
+        return{"section":req.section,"content":gen_prop(req.section,od,cd,ps)}
 
 @app.post("/api/field-report")
 def field_report(req:FRReq,request:Request):
