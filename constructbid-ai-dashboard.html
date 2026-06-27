@@ -565,6 +565,19 @@ function showProfileTab(tab){['profile-main','profile-docs','profile-team','prof
   event.currentTarget.style.background='var(--accent)';event.currentTarget.style.color='#fff';
   if(tab==='profile-docs')loadDocs();if(tab==='profile-team')loadTeam();if(tab==='profile-partners')loadPartners();if(tab==='profile-library')loadSnippets()}
 
+function cbConfirm(message){return new Promise(resolve=>{
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)';
+  const box=document.createElement('div');
+  box.style.cssText='background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;max-width:340px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,.5)';
+  box.innerHTML='<div style="font-size:14px;color:var(--text);margin-bottom:18px;line-height:1.5"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button id="cbc-cancel" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:Outfit">Cancel</button><button id="cbc-ok" style="padding:8px 16px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Outfit">Delete</button></div>';
+  box.querySelector('div').textContent=message;
+  ov.appendChild(box);document.body.appendChild(ov);
+  function close(val){ov.remove();resolve(val)}
+  box.querySelector('#cbc-cancel').onclick=()=>close(false);
+  box.querySelector('#cbc-ok').onclick=()=>close(true);
+  ov.onclick=e=>{if(e.target===ov)close(false)};
+})}
 let allSnippets=[];
 const SNIP_CATS={past_performance:'Past Performance',capability:'Capability Statement',certifications:'Certifications / Compliance',background:'Company Background',differentiators:'Differentiators',other:'Other'};
 async function loadSnippets(){try{allSnippets=await api('/api/content-snippets')}catch{allSnippets=[]}renderSnippets()}
@@ -575,7 +588,7 @@ async function saveSnippet(){const title=(document.getElementById('snip-title').
   if(!title||!content){document.getElementById('snip-msg').textContent='Title and content required';document.getElementById('snip-msg').style.color='var(--red)';return}
   try{await api('/api/content-snippets',{method:'POST',body:JSON.stringify({title,category,content})});document.getElementById('snip-title').value='';document.getElementById('snip-content').value='';document.getElementById('snip-msg').textContent='Saved!';document.getElementById('snip-msg').style.color='var(--green)';loadSnippets();setTimeout(()=>{document.getElementById('snip-msg').textContent=''},2000)}catch(e){document.getElementById('snip-msg').textContent='Error saving';document.getElementById('snip-msg').style.color='var(--red)'}}
 function copySnippet(id){const s=allSnippets.find(x=>x.id===id);if(!s)return;navigator.clipboard.writeText(s.content).then(()=>toast('Copied to clipboard!')).catch(()=>toast('Copy failed','error'))}
-async function deleteSnippet(id){if(!confirm('Delete this snippet?'))return;try{await api('/api/content-snippets/'+id,{method:'DELETE'});loadSnippets();toast('Deleted')}catch{toast('Error deleting','error')}}
+async function deleteSnippet(id){if(!await cbConfirm('Delete this snippet?'))return;try{await api('/api/content-snippets/'+id,{method:'DELETE'});loadSnippets();toast('Deleted')}catch{toast('Error deleting','error')}}
 async function loadSavedSearches(){const bar=document.getElementById('saved-searches-bar');if(!bar)return;try{const searches=await api('/api/saved-searches');bar.innerHTML=searches.map(s=>{const f=s.filters;let label=s.name;return'<div style="display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:3px 8px;font-size:11px;cursor:pointer" onclick="applySavedSearch(\''+s.id+'\','+JSON.stringify(JSON.stringify(s.filters))+')"><span style="color:var(--text)">'+esc(label)+'</span>'+(s.alert_enabled?'<span style="color:var(--green)" title="Alerts on">🔔</span>':'')+'<span style="color:var(--dim);margin-left:2px" onclick="event.stopPropagation();deleteSavedSearch(\''+s.id+'\')" title="Delete">×</span></div>'}).join('')}catch{}}
 async function saveCurrentSearch(){const q=document.getElementById('search-input').value||'';const fs=document.getElementById('filter-score').value;const fo=document.getElementById('filter-source').value;const ft=document.getElementById('filter-status').value;const fl=document.getElementById('filter-location').value;
   if(!q&&!fs&&!fo&&!ft&&!fl){toast('Set some filters first, then save','error');return}
