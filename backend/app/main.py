@@ -22,7 +22,7 @@ def c2d(c):
     return{"id":c.id,"name":c.name,"services":c.services or[],"certifications":c.certifications or[],
     "naics":c.naics or[],"bonding_capacity":c.bonding_capacity or 0,"regions":c.regions or[],
     "sam_api_key":c.sam_api_key or"","notify_email":c.notify_email or"","notify_phone":c.notify_phone or"",
-    "notify_enabled":c.notify_enabled or False,"notify_min_score":c.notify_min_score or 75,
+    "notify_enabled":c.notify_enabled or False,"notify_min_score":c.notify_min_score or 75,"digest_frequency":c.digest_frequency or "weekly",
     "plan_status":c.plan_status or"trial","stripe_customer_id":c.stripe_customer_id or"",
     "stripe_subscription_id":c.stripe_subscription_id or"","theme":c.theme or"dark-blue",
     "trial_ends_at":c.trial_ends_at.isoformat() if c.trial_ends_at else None}
@@ -113,6 +113,25 @@ async def send_weekly_digest(company,stats):
             await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":f"📊 Weekly Report — {cn}","html":html})
         print(f"[DIGEST] Sent to {em}")
     except Exception as e:print(f"[DIGEST] Error: {e}")
+
+async def send_opportunity_digest(company,opps_list,period_label):
+    em=company.get("notify_email","");rk=env("RESEND_API_KEY")
+    if not em or not rk or not opps_list:return
+    cn=company.get("name","")
+    rows=""
+    for o in opps_list[:15]:
+        ag=(o.get("agency","") or "").split(".")
+        ag=[a.strip() for a in ag if a.strip()]
+        agency=ag[-1] if ag else ""
+        due=o.get("due_date","") or "TBD"
+        rows+='<tr><td style="padding:12px;border-bottom:1px solid #1e2d3d"><div style="color:#e2e8f0;font-weight:600;font-size:14px">'+str(o.get("title",""))[:70]+'</div><div style="color:#64748b;font-size:12px;margin-top:2px">'+agency+' \u00b7 Due '+due+'</div></td><td style="padding:12px;border-bottom:1px solid #1e2d3d;text-align:right"><div style="display:inline-block;background:#22c55e;color:#fff;font-weight:700;border-radius:20px;padding:4px 12px;font-size:14px">'+str(o.get("score",0))+'</div></td></tr>'
+    html='<div style="background:#0a0f1a;padding:20px;font-family:Arial"><div style="max-width:600px;margin:0 auto;background:#111827;border-radius:12px;border:1px solid #1e2d3d"><div style="background:linear-gradient(135deg,#3b82f6,#06b6d4);padding:24px;text-align:center"><h1 style="color:white;margin:0;font-size:22px">\U0001F3AF New Strong-Fit Contracts</h1><p style="color:rgba(255,255,255,.85);margin:8px 0 0">'+cn+' \u00b7 '+period_label+'</p></div><div style="padding:24px"><p style="color:#94a3b8;font-size:14px;margin:0 0 16px">You have <strong style="color:#22c55e">'+str(len(opps_list))+'</strong> new high-scoring '+("opportunity" if len(opps_list)==1 else "opportunities")+' worth a look:</p><table style="width:100%;border-collapse:collapse">'+rows+'</table><div style="text-align:center;margin-top:24px"><a href="https://constructbidai.com/dashboard" style="display:inline-block;background:#3b82f6;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:600">View in Dashboard \u2192</a></div></div></div></div>'
+    subj="\U0001F3AF "+str(len(opps_list))+" new strong-fit contract"+("s" if len(opps_list)!=1 else "")+" \u2014 "+cn
+    try:
+        async with httpx.AsyncClient(timeout=15) as c:
+            await c.post("https://api.resend.com/emails",headers={"Authorization":f"Bearer {rk}","Content-Type":"application/json"},json={"from":"ConstructBid AI <onboarding@resend.dev>","to":[em],"subject":subj,"html":html})
+        print("[OPP-DIGEST] Sent "+str(len(opps_list))+" to "+em)
+    except Exception as e:print("[OPP-DIGEST] Error: "+str(e))
 
 # Scoring
 SK=["cemetery","columbarium","gravesite","burial","headstone","memorial","interment","construction","renovation","remodel","expansion","demolition","design-build","design build","facilities","maintenance","grounds","landscaping","mowing","irrigation","hvac","plumbing","mechanical","electrical","roofing","painting","concrete","masonry","site prep","excavation","grading","paving","drainage","fencing","restoration","historic","rehabilitation","lease","leasing","repair","replace","install","upgrade","improve"]
@@ -253,22 +272,27 @@ async def ar_loop():
                 except Exception as e:se.rollback();ars["last_result"]=str(e)[:100]
                 ars["running"]=False
 
-                # Weekly digest check (send on Mondays)
+                # Opportunity digest check (frequency-aware: off / daily / weekly)
                 cid=comp.id;today=date.today()
-                if today.weekday()==0:  # Monday
-                    last_sent=digest_tracker.get(cid)
-                    if last_sent!=str(today) and cd.get("notify_email"):
-                        opps=se.query(Opportunity).filter(Opportunity.company_id==cid).all()
-                        week_ago=(datetime.utcnow()-timedelta(days=7)).isoformat()
-                        new_week=sum(1 for o in opps if o.created_at and o.created_at.isoformat()>week_ago)
-                        scored=[score(o2d(o),cd) for o in opps]
-                        pursue=sum(1 for s in scored if s["recommendation"]=="PURSUE")
-                        pipeline=sum(o.value or 0 for o in opps)
-                        submitted=sum(1 for o in opps if o.status=="submitted")
-                        won=sum(1 for o in opps if o.outcome=="won")
-                        lost=sum(1 for o in opps if o.outcome=="lost")
-                        wr=round(won/(won+lost)*100) if(won+lost)>0 else 0
-                        await send_weekly_digest(cd,{"new_this_week":new_week,"pursue":pursue,"pipeline":pipeline,"submitted":submitted,"win_rate":wr})
+                freq=cd.get("digest_frequency","weekly")
+                if freq and freq!="off" and cd.get("notify_email"):
+                    should_send=False
+                    if freq=="daily":should_send=(digest_tracker.get(cid)!=str(today))
+                    elif freq=="weekly":should_send=(today.weekday()==0 and digest_tracker.get(cid)!=str(today))
+                    if should_send:
+                        allopps=se.query(Opportunity).filter(Opportunity.company_id==cid).all()
+                        nm=cd.get("notify_min_score",75)
+                        lookback=(datetime.utcnow()-timedelta(days=1 if freq=="daily" else 7)).isoformat()
+                        fresh=[]
+                        for o in allopps:
+                            if o.created_at and o.created_at.isoformat()>lookback:
+                                sc=score(o2d(o),cd)
+                                if sc["score"]>=nm:
+                                    od=o2d(o);od["score"]=sc["score"];fresh.append(od)
+                        fresh.sort(key=lambda x:x["score"],reverse=True)
+                        if fresh:
+                            label="Daily Digest" if freq=="daily" else "Weekly Digest"
+                            await send_opportunity_digest(cd,fresh,label)
                         digest_tracker[cid]=str(today)
         finally:se.close()
         ars["next_run"]=(datetime.now()+timedelta(hours=ARH)).isoformat()
@@ -288,7 +312,7 @@ class LoginReq(BaseModel):
     email:str;password:str
 class CompanyUpd(BaseModel):
     name:str;services:list[str];certifications:list[str];naics:list[str];bonding_capacity:float;regions:list[str]
-    sam_api_key:Optional[str]="";notify_email:Optional[str]="";notify_phone:Optional[str]=""
+    sam_api_key:Optional[str]="";notify_email:Optional[str]="";notify_phone:Optional[str]="";digest_frequency:Optional[str]=None
     notify_enabled:Optional[bool]=False;notify_min_score:Optional[int]=75;theme:Optional[str]="dark-blue"
 class OppCreate(BaseModel):
     title:str;agency:str;naics:str;location:str;due_date:str;value:float;set_aside:str;scope:str
@@ -459,7 +483,8 @@ def upd_co(data:CompanyUpd,request:Request):
     try:
         c=se.query(Company).filter(Company.id==u["company_id"]).first()
         if not c:raise HTTPException(404)
-        for k,v in data.dict().items():setattr(c,k,v)
+        for k,v in data.dict().items():
+            if v is not None:setattr(c,k,v)
         c.updated_at=datetime.utcnow();se.commit();return c2d(c)
     finally:se.close()
 

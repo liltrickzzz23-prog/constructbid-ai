@@ -84,6 +84,7 @@ class Company(Base):
     notify_phone = Column(String, default="")
     notify_enabled = Column(Boolean, default=False)
     notify_min_score = Column(Integer, default=75)
+    digest_frequency = Column(String, default="weekly")
     stripe_customer_id = Column(String, default="")
     stripe_subscription_id = Column(String, default="")
     plan_status = Column(String, default="trial")
