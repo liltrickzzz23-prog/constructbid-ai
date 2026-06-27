@@ -293,7 +293,7 @@ class CompanyUpd(BaseModel):
 class OppCreate(BaseModel):
     title:str;agency:str;naics:str;location:str;due_date:str;value:float;set_aside:str;scope:str
 class OppUpdate(BaseModel):
-    status:Optional[str]=None;notes:Optional[str]=None;outcome:Optional[str]=None;outcome_value:Optional[float]=None
+    status:Optional[str]=None;notes:Optional[str]=None;outcome:Optional[str]=None;outcome_value:Optional[float]=None;value:Optional[float]=None
 class FRReq(BaseModel):
     project_name:str;notes:str
 class PropReq(BaseModel):
@@ -493,6 +493,7 @@ def update_opp(oid:str,data:OppUpdate,request:Request):
         if data.notes is not None:o.notes=data.notes
         if data.outcome is not None:o.outcome=data.outcome
         if data.outcome_value is not None:o.outcome_value=data.outcome_value
+        if data.value is not None:o.value=data.value
         se.commit();return o2d(o)
     finally:se.close()
 
