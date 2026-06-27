@@ -51,6 +51,16 @@ class Document(Base):
     file_type = Column(String, default="")
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class ContentSnippet(Base):
+    __tablename__ = "content_snippets"
+    id = Column(String, primary_key=True)
+    company_id = Column(String, nullable=False)
+    title = Column(String, default="")
+    category = Column(String, default="other")
+    content = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
 class SavedSearch(Base):
     __tablename__ = "saved_searches"
     id = Column(String, primary_key=True)

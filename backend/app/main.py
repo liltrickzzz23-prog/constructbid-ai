@@ -9,7 +9,7 @@ from typing import Optional
 import json,os,uuid,httpx,asyncio,re,base64,bcrypt,jwt,stripe
 from datetime import datetime,date,timedelta
 from contextlib import asynccontextmanager
-from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document,Partner
+from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document,Partner,ContentSnippet
 
 JWT_SECRET=os.environ.get("JWT_SECRET","constructbid-secret")
 STRIPE_SECRET=os.environ.get("STRIPE_SECRET_KEY","")
@@ -979,6 +979,49 @@ async def delete_document(did: str, request: Request):
         doc=se.query(Document).filter(Document.id==did,Document.company_id==u["company_id"]).first()
         if not doc:raise HTTPException(404,"Document not found")
         se.delete(doc);se.commit()
+        return{"ok":True}
+    finally:se.close()
+
+@app.get("/api/content-snippets")
+async def get_snippets(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        snips=se.query(ContentSnippet).filter(ContentSnippet.company_id==u["company_id"]).order_by(ContentSnippet.updated_at.desc()).all()
+        return [{"id":s.id,"title":s.title,"category":s.category,"content":s.content,"updated_at":s.updated_at.isoformat() if s.updated_at else ""} for s in snips]
+    finally:se.close()
+
+@app.post("/api/content-snippets")
+async def add_snippet(request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        d=await request.json()
+        import uuid as uu
+        sid=uu.uuid4().hex[:12]
+        snip=ContentSnippet(id=sid,company_id=u["company_id"],title=d.get("title","Untitled"),category=d.get("category","other"),content=d.get("content",""))
+        se.add(snip);se.commit()
+        return{"ok":True,"id":sid}
+    finally:se.close()
+
+@app.put("/api/content-snippets/{sid}")
+async def update_snippet(sid: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        snip=se.query(ContentSnippet).filter(ContentSnippet.id==sid,ContentSnippet.company_id==u["company_id"]).first()
+        if not snip:raise HTTPException(404,"Snippet not found")
+        d=await request.json()
+        snip.title=d.get("title",snip.title);snip.category=d.get("category",snip.category);snip.content=d.get("content",snip.content)
+        snip.updated_at=datetime.utcnow()
+        se.commit()
+        return{"ok":True}
+    finally:se.close()
+
+@app.delete("/api/content-snippets/{sid}")
+async def delete_snippet(sid: str, request: Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        snip=se.query(ContentSnippet).filter(ContentSnippet.id==sid,ContentSnippet.company_id==u["company_id"]).first()
+        if not snip:raise HTTPException(404,"Snippet not found")
+        se.delete(snip);se.commit()
         return{"ok":True}
     finally:se.close()
 
