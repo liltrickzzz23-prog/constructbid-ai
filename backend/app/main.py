@@ -401,12 +401,16 @@ def onboarding(request:Request):
         co=se.query(Company).filter(Company.id==u["company_id"]).first()
         if not co:return{"steps":[],"complete":0,"total":5}
         cd=c2d(co)
+        cid=u["company_id"]
+        has_docs=se.query(Document).filter(Document.company_id==cid).first() is not None
+        has_snippet=se.query(ContentSnippet).filter(ContentSnippet.company_id==cid).first() is not None
+        profile_done=bool(cd["name"] and cd["name"]!="New Company" and cd["name"]!="My Company") and len(cd["naics"])>0
         steps=[
-            {"key":"name","label":"Add your company name","done":bool(cd["name"] and cd["name"]!="New Company" and cd["name"]!="My Company"),"tip":"Go to Company tab and enter your real company name"},
-            {"key":"naics","label":"Add NAICS codes","done":len(cd["naics"])>0,"tip":"Your NAICS codes tell us what contracts to find. Look them up at naics.com"},
-            {"key":"certs","label":"Add certifications","done":len(cd["certifications"])>0,"tip":"SDVOSB, 8(a), HUBZone, etc. These determine which set-asides you qualify for"},
-            {"key":"regions","label":"Set operating regions","done":len(cd["regions"])>0,"tip":"Which states do you work in? We'll prioritize opportunities there"},
-            {"key":"sam","label":"Connect SAM.gov API key","done":bool(cd["sam_api_key"]),"tip":"Free from sam.gov → Profile → Public API Key. This lets us auto-find opportunities"},
+            {"key":"profile","label":"Complete your company profile","done":profile_done,"tip":"Add your company name and NAICS codes so we know what contracts to find"},
+            {"key":"sam","label":"Connect your SAM.gov API key","done":bool(cd["sam_api_key"]),"tip":"Free from sam.gov → Profile → Public API Key. This lets us auto-find opportunities"},
+            {"key":"docs","label":"Upload a capability statement","done":has_docs,"tip":"Company tab → Documents. Keep your key docs in one place"},
+            {"key":"snippet","label":"Save a Content Library snippet","done":has_snippet,"tip":"Company tab → Content Library. Save reusable proposal content once, reuse it everywhere"},
+            {"key":"notify","label":"Set your notification preferences","done":bool(cd.get("notify_email")),"tip":"Company tab → Settings. Get emailed when strong-fit contracts drop"},
         ]
         complete=sum(1 for s in steps if s["done"])
         return{"steps":steps,"complete":complete,"total":len(steps)}
