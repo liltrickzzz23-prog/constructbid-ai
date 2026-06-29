@@ -182,9 +182,9 @@ a{color:var(--accent)}
 .back-to-top:hover{transform:scale(1.1)}
 .back-to-top.visible{display:flex}
 /* Calendar */
-.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
-.cal-header{text-align:center;font-size:11px;font-weight:600;color:var(--dim);padding:6px 0;text-transform:uppercase}
-.cal-day{min-height:70px;border-radius:8px;padding:6px;font-size:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .2s;position:relative}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal-header{text-align:center;font-size:12px;font-weight:700;color:var(--dim);padding:8px 0;text-transform:uppercase}
+.cal-day{min-height:110px;border-radius:10px;padding:10px;font-size:13px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .2s;position:relative}
 .cal-day:hover{border-color:var(--accent);transform:translateY(-1px)}
 .cal-day.today{border-color:var(--accent);border-width:2px;box-shadow:0 0 10px color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 8%,var(--surface2))}
 .cal-day.today .cal-day-num{color:var(--accent);font-weight:800}
@@ -192,9 +192,9 @@ a{color:var(--accent)}
 .cal-day.cal-past:hover{transform:none;border-color:var(--border)}
 .cal-day.empty{background:transparent;border:none;cursor:default;min-height:0}
 .cal-day.empty:hover{transform:none;border-color:transparent}
-.cal-day-num{font-weight:600;margin-bottom:4px;color:var(--text)}
-.cal-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:1px}
-.cal-count{font-size:9px;color:var(--dim);margin-top:2px}
+.cal-day-num{font-weight:700;font-size:15px;margin-bottom:6px;color:var(--text)}
+.cal-dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin:2px;box-shadow:0 0 0 2px var(--surface2),0 1px 3px rgba(0,0,0,.3)}
+.cal-count{font-size:11px;color:var(--dim);margin-top:4px;font-weight:600}
 .cal-day-selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface2))}
 /* Kanban Board */
 .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px}
