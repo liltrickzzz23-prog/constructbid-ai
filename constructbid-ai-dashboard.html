@@ -468,7 +468,7 @@ function winAnalysis(id,ev){if(ev)ev.stopPropagation();markSeen(id);showDetail(i
 async function askAI(q){if(!q||!currentOpp)return;document.getElementById('ai-input').value='';const m=document.getElementById('ai-messages');m.innerHTML+='<div class="ai-msg ai-msg-user">'+esc(q)+'</div><div class="ai-msg ai-msg-ai" id="ai-think"><span class="spinner"></span> Analyzing...</div>';m.scrollTop=m.scrollHeight;
   try{const d=await api('/api/ask-ai',{method:'POST',body:JSON.stringify({opportunity_id:currentOpp.id,question:q})});document.getElementById('ai-think').remove();m.innerHTML+='<div class="ai-msg ai-msg-ai">'+d.answer.replace(/\n/g,'<br>')+'</div>'}catch(e){document.getElementById('ai-think').remove();m.innerHTML+='<div class="ai-msg ai-msg-ai" style="color:var(--red)">'+esc(e.message)+'</div>'}m.scrollTop=m.scrollHeight}
 // Analytics
-async function loadAnalytics(){document.getElementById('analytics-content').innerHTML='<div style="text-align:center;padding:30px"><span class="spinner"></span> Loading...</div>';try{const d=await api('/api/analytics');renderAnalytics(d)}catch(e){document.getElementById('analytics-content').innerHTML='<div class="error-msg">'+esc(e.message)+'</div>'}}
+async function loadAnalytics(){const skelCard='<div class="skeleton"><div class="skel-line skel-med"></div><div class="skel-line skel-long"></div></div>';const skelGrid='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">'+Array(6).fill('<div class="skeleton" style="padding:16px"><div class="skel-line skel-short" style="margin:0 auto 8px"></div><div class="skel-line skel-med" style="margin:0 auto"></div></div>').join('')+'</div>';document.getElementById('analytics-content').innerHTML=skelGrid+skelCard+skelCard;try{const d=await api('/api/analytics');renderAnalytics(d)}catch(e){document.getElementById('analytics-content').innerHTML='<div class="error-msg">'+esc(e.message)+'</div><div style="text-align:center;margin-top:8px"><span style="color:var(--accent);cursor:pointer;text-decoration:underline;font-size:13px" onclick="loadAnalytics()">Try again</span></div>'}}
 function renderAnalytics(d){const wr=d.win_rate||0;const wc=wr>=50?'var(--green)':wr>=25?'var(--yellow)':'var(--dim)';
   const bs=d.by_status||{};const mx=Math.max(...Object.values(bs),1);
   const cc={new:'var(--accent)',pursuing:'var(--yellow)',submitted:'#a78bfa',won:'var(--green)',lost:'var(--red)',passed:'var(--dim)'};
@@ -730,6 +730,7 @@ async function loadAwardHistory(){if(!currentOpp)return;
 let calDate=new Date();
 function calNav(dir){calDate.setMonth(calDate.getMonth()+dir);renderCalendar()}
 function renderCalendar(){const grid=document.getElementById('cal-grid');const label=document.getElementById('cal-month');if(!grid||!label)return;
+  if(!opps||opps.length===0){grid.innerHTML=Array(35).fill('<div class="skeleton" style="min-height:70px;padding:6px;margin:0"><div class="skel-line skel-short" style="height:10px"></div></div>').join('');}
   const yr=calDate.getFullYear(),mo=calDate.getMonth();const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   label.textContent=months[mo]+' '+yr;
   const firstDay=new Date(yr,mo,1).getDay();const daysInMonth=new Date(yr,mo+1,0).getDate();const today=new Date();today.setHours(0,0,0,0);
