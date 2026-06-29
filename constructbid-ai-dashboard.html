@@ -475,7 +475,7 @@ function renderAnalytics(d){const wr=d.win_rate||0;const wc=wr>=50?'var(--green)
   opps.forEach(o=>{const s=o.score||0;if(s>=90)scoreBuckets['90-100']++;else if(s>=75)scoreBuckets['75-89']++;else if(s>=55)scoreBuckets['55-74']++;else if(s>=30)scoreBuckets['30-54']++;else scoreBuckets['0-29']++});
   const scoreMx=Math.max(...Object.values(scoreBuckets),1);
   // Top agencies
-  const agencyCounts={};opps.forEach(o=>{const a=(o.agency||'Unknown').split(',')[0].trim().substring(0,40);agencyCounts[a]=(agencyCounts[a]||0)+1});
+  const agencyCounts={};opps.forEach(o=>{const a=fmtAgency(o.agency)||'Unknown';agencyCounts[a]=(agencyCounts[a]||0)+1});
   const topAgencies=Object.entries(agencyCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
   const agMx=topAgencies.length?topAgencies[0][1]:1;
   // Set-aside breakdown
