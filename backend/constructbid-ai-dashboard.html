@@ -186,7 +186,10 @@ a{color:var(--accent)}
 .cal-header{text-align:center;font-size:11px;font-weight:600;color:var(--dim);padding:6px 0;text-transform:uppercase}
 .cal-day{min-height:70px;border-radius:8px;padding:6px;font-size:12px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .2s;position:relative}
 .cal-day:hover{border-color:var(--accent);transform:translateY(-1px)}
-.cal-day.today{border-color:var(--accent);box-shadow:0 0 8px color-mix(in srgb,var(--accent) 25%,transparent)}
+.cal-day.today{border-color:var(--accent);border-width:2px;box-shadow:0 0 10px color-mix(in srgb,var(--accent) 35%,transparent);background:color-mix(in srgb,var(--accent) 8%,var(--surface2))}
+.cal-day.today .cal-day-num{color:var(--accent);font-weight:800}
+.cal-day.cal-past{opacity:.45;background:transparent}
+.cal-day.cal-past:hover{transform:none;border-color:var(--border)}
 .cal-day.empty{background:transparent;border:none;cursor:default;min-height:0}
 .cal-day.empty:hover{transform:none;border-color:transparent}
 .cal-day-num{font-weight:600;margin-bottom:4px;color:var(--text)}
@@ -730,7 +733,7 @@ function calNav(dir){calDate.setMonth(calDate.getMonth()+dir);renderCalendar()}
 function renderCalendar(){const grid=document.getElementById('cal-grid');const label=document.getElementById('cal-month');if(!grid||!label)return;
   const yr=calDate.getFullYear(),mo=calDate.getMonth();const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
   label.textContent=months[mo]+' '+yr;
-  const firstDay=new Date(yr,mo,1).getDay();const daysInMonth=new Date(yr,mo+1,0).getDate();const today=new Date();
+  const firstDay=new Date(yr,mo,1).getDay();const daysInMonth=new Date(yr,mo+1,0).getDate();const today=new Date();today.setHours(0,0,0,0);
   // Group opps by due date
   const byDate={};opps.forEach(o=>{if(!o.due_date)return;const d=o.due_date.substring(0,10);if(!byDate[d])byDate[d]=[];byDate[d].push(o)});
   let html='';const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
@@ -742,17 +745,20 @@ function renderCalendar(){const grid=document.getElementById('cal-grid');const l
     const dateStr=yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
     const dayOpps=byDate[dateStr]||[];
     const isToday=today.getFullYear()===yr&&today.getMonth()===mo&&today.getDate()===d;
-    const diff=Math.ceil((new Date(dateStr)-today)/(1000*60*60*24));
-    html+='<div class="cal-day'+(isToday?' today':'')+'" onclick="showCalDay(\''+dateStr+'\')">';
+    const cellDate=new Date(yr,mo,d);cellDate.setHours(0,0,0,0);
+    const diff=Math.round((cellDate-today)/(1000*60*60*24));
+    const isPast=diff<0;
+    html+='<div class="cal-day'+(isToday?' today':'')+(isPast?' cal-past':'')+'" onclick="showCalDay(\''+dateStr+'\')">';
     html+='<div class="cal-day-num">'+d+'</div>';
     if(dayOpps.length>0){
-      const urgent=dayOpps.filter(o=>diff<=3).length;
-      const soon=dayOpps.filter(o=>diff>3&&diff<=14).length;
-      const later=dayOpps.filter(o=>diff>14).length;
-      if(urgent)html+='<span class="cal-dot" style="background:var(--red)"></span>';
-      if(soon)html+='<span class="cal-dot" style="background:var(--yellow)"></span>';
-      if(later)html+='<span class="cal-dot" style="background:var(--green)"></span>';
-      html+='<div class="cal-count">'+dayOpps.length+' bid'+(dayOpps.length>1?'s':'')+'</div>';
+      if(isPast){
+        html+='<span class="cal-dot" style="background:var(--dim);opacity:.5"></span>';
+        html+='<div class="cal-count" style="color:var(--dim);opacity:.6">'+dayOpps.length+' past</div>';
+      }else{
+        const color=diff<=3?'var(--red)':diff<=14?'var(--yellow)':'var(--green)';
+        html+='<span class="cal-dot" style="background:'+color+'"></span>';
+        html+='<div class="cal-count">'+dayOpps.length+' bid'+(dayOpps.length>1?'s':'')+'</div>';
+      }
     }
     html+='</div>';
   }
