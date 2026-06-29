@@ -195,6 +195,12 @@ a{color:var(--accent)}
 .cal-day-num{font-weight:700;font-size:15px;margin-bottom:6px;color:var(--text)}
 .cal-dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin:2px;box-shadow:0 0 0 2px var(--surface2),0 1px 3px rgba(0,0,0,.3)}
 .cal-count{font-size:11px;color:var(--dim);margin-top:4px;font-weight:600}
+input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:18px !important;height:18px !important;border:2px solid var(--border);border-radius:5px;background:var(--surface2);cursor:pointer;position:relative;transition:all .15s ease;flex-shrink:0;vertical-align:middle}
+input[type="checkbox"]:hover{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent)}
+input[type="checkbox"]:checked::after{content:"";position:absolute;left:5px;top:1px;width:4px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+input[type="checkbox"]:indeterminate{background:var(--accent);border-color:var(--accent)}
+input[type="checkbox"]:indeterminate::after{content:"";position:absolute;left:3px;top:7px;width:10px;height:2px;background:#fff;border-radius:1px}
 .cal-day-selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface2))}
 /* Kanban Board */
 .kanban{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px}
