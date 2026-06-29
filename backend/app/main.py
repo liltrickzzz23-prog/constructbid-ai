@@ -538,19 +538,20 @@ def analytics(request:Request):
     try:
         c=se.query(Company).filter(Company.id==u["company_id"]).first();cd=c2d(c) if c else{}
         opps=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
-        total=len(opps);by_status={};by_outcome={};tv=0;wv=0
+        total=len(opps);by_status={};by_outcome={};pipeline_value=0;wv=0
         for o in opps:
             st=o.status or"new";oc=o.outcome or""
             by_status[st]=by_status.get(st,0)+1
             if oc:by_outcome[oc]=by_outcome.get(oc,0)+1
-            tv+=o.value or 0
+            if st=="pursuing":pipeline_value+=o.value or 0
             if oc=="won":wv+=o.outcome_value or o.value or 0
         scored=[score(o2d(o),cd) for o in opps]
         pursue=sum(1 for s in scored if s["recommendation"]=="PURSUE")
         review=sum(1 for s in scored if s["recommendation"]=="REVIEW")
+        potential_value=sum((o.value or 0) for o,s in zip(opps,scored) if s["recommendation"]=="PURSUE")
         won=by_outcome.get("won",0);lost=by_outcome.get("lost",0)
         wr=round(won/(won+lost)*100) if(won+lost)>0 else 0
-        return{"total":total,"by_status":by_status,"by_outcome":by_outcome,"pursue":pursue,"review":review,"total_pipeline_value":tv,"won_value":wv,"win_rate":wr,"won":won,"lost":lost,"submitted":by_status.get("submitted",0)}
+        return{"total":total,"by_status":by_status,"by_outcome":by_outcome,"pursue":pursue,"review":review,"total_pipeline_value":pipeline_value,"potential_value":potential_value,"won_value":wv,"win_rate":wr,"won":won,"lost":lost,"submitted":by_status.get("submitted",0)}
     finally:se.close()
 
 # SAM
