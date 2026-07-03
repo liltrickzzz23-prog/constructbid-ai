@@ -434,7 +434,7 @@ async def competition(oid:str,request:Request):
             return{"competitors":cached.payload or [],"cached":True}
         key=env("SAM_ENTITY_API_KEY")
         if not key:return{"competitors":[],"cached":False,"note":"Competitor lookup not configured."}
-        params={"api_key":key,"primaryNaics":naics,"registrationStatus":"A","includeSections":"entityRegistration,coreData","size":10}
+        params={"api_key":key,"primaryNaics":naics,"registrationStatus":"A","includeSections":"entityRegistration,coreData","size":10,"physicalAddressCountryCode":"USA"}
         if state and len(state)==2:params["physicalAddressProvinceOrStateCode"]=state
         try:
             async with httpx.AsyncClient(timeout=20) as c:
