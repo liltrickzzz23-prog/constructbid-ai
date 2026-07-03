@@ -434,7 +434,7 @@ async def competition(oid:str,request:Request):
             return{"competitors":cached.payload or [],"cached":True}
         key=env("SAM_ENTITY_API_KEY")
         if not key:return{"competitors":[],"cached":False,"note":"Competitor lookup not configured."}
-        params={"api_key":key,"primaryNaics":naics,"registrationStatus":"A","includeSections":"entityRegistration,coreData","size":25}
+        params={"api_key":key,"primaryNaics":naics,"registrationStatus":"A","includeSections":"entityRegistration,coreData","size":10}
         if state and len(state)==2:params["physicalAddressProvinceOrStateCode"]=state
         try:
             async with httpx.AsyncClient(timeout=20) as c:
@@ -445,7 +445,7 @@ async def competition(oid:str,request:Request):
             if "entityData" not in data:
                 return{"competitors":[],"cached":False,"note":"Competitor data temporarily unavailable. Try again after 8 PM ET (daily quota resets)."}
             comps=[]
-            for e in data.get("entityData",[])[:25]:
+            for e in data.get("entityData",[])[:10]:
                 reg=e.get("entityRegistration",{}) or {}
                 core=e.get("coreData",{}) or {}
                 addr=(core.get("physicalAddress",{}) or {})
