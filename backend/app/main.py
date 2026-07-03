@@ -9,7 +9,7 @@ from typing import Optional
 import json,os,uuid,httpx,asyncio,re,base64,bcrypt,jwt,stripe
 from datetime import datetime,date,timedelta
 from contextlib import asynccontextmanager
-from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document,Partner,ContentSnippet
+from app.database import init_db,SessionLocal,User,Company,Opportunity,Project,SavedSearch,Document,Partner,ContentSnippet,EntityCache
 
 JWT_SECRET=os.environ.get("JWT_SECRET","constructbid-secret")
 STRIPE_SECRET=os.environ.get("STRIPE_SECRET_KEY","")
@@ -414,6 +414,63 @@ def onboarding(request:Request):
         ]
         complete=sum(1 for s in steps if s["done"])
         return{"steps":steps,"complete":complete,"total":len(steps)}
+    finally:se.close()
+
+SETASIDE_MAP={"SDVOSB":"QF","8(a)":"8A","8A":"8A","HUBZone":"XX","WOSB":"A2","EDWOSB":"A2","Small Business":""}
+
+@app.get("/api/competition/{oid}")
+async def competition(oid:str,request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        o=se.query(Opportunity).filter(Opportunity.id==oid,Opportunity.company_id==u["company_id"]).first()
+        if not o:raise HTTPException(404,"Opportunity not found")
+        naics=(o.naics or "").strip()
+        state=(o.location or "").strip().upper()
+        if not naics:return{"competitors":[],"cached":False,"note":"No NAICS code on this opportunity to match against."}
+        ck=naics+"|"+state
+        # cache check (7 days)
+        cached=se.query(EntityCache).filter(EntityCache.cache_key==ck).first()
+        if cached and cached.fetched_at and (datetime.utcnow()-cached.fetched_at).days<7:
+            return{"competitors":cached.payload or [],"cached":True}
+        key=env("SAM_ENTITY_API_KEY")
+        if not key:return{"competitors":[],"cached":False,"note":"Competitor lookup not configured."}
+        params={"api_key":key,"primaryNaics":naics,"registrationStatus":"A","includeSections":"entityRegistration,coreData","size":25}
+        if state and len(state)==2:params["physicalAddressProvinceOrStateCode"]=state
+        try:
+            async with httpx.AsyncClient(timeout=20) as c:
+                r=await c.get("https://api.sam.gov/entity-information/v3/entities",params=params)
+            if r.status_code!=200:
+                return{"competitors":[],"cached":False,"note":"Competitor data temporarily unavailable. Try again after 8 PM ET (daily quota resets)."}
+            data=r.json()
+            if "entityData" not in data:
+                return{"competitors":[],"cached":False,"note":"Competitor data temporarily unavailable. Try again after 8 PM ET (daily quota resets)."}
+            comps=[]
+            for e in data.get("entityData",[])[:25]:
+                reg=e.get("entityRegistration",{}) or {}
+                core=e.get("coreData",{}) or {}
+                addr=(core.get("physicalAddress",{}) or {})
+                biz=(core.get("businessTypes",{}) or {})
+                bt=[b.get("businessTypeDesc","") for b in (biz.get("businessTypeList",[]) or []) if b.get("businessTypeDesc")]
+                comps.append({
+                    "name":reg.get("legalBusinessName",""),
+                    "uei":reg.get("ueiSAM",""),
+                    "cage":reg.get("cageCode",""),
+                    "city":addr.get("city",""),
+                    "state":addr.get("stateOrProvinceCode",""),
+                    "types":bt[:6]
+                })
+            # upsert cache
+            import uuid as uu
+            if cached:
+                cached.payload=comps;cached.fetched_at=datetime.utcnow()
+            else:
+                se.add(EntityCache(id=uu.uuid4().hex[:12],cache_key=ck,payload=comps,fetched_at=datetime.utcnow()))
+            se.commit()
+            return{"competitors":comps,"cached":False}
+        except HTTPException:raise
+        except Exception as ex:
+            print(f"[COMPETITION] Error: {ex}")
+            return{"competitors":[],"cached":False,"note":"Competitor lookup failed. Please try again later."}
     finally:se.close()
 
 # AI Chat

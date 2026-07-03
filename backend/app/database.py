@@ -61,6 +61,13 @@ class ContentSnippet(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
+class EntityCache(Base):
+    __tablename__ = "entity_cache"
+    id = Column(String, primary_key=True)
+    cache_key = Column(String, nullable=False, index=True)
+    payload = Column(JSON, default=list)
+    fetched_at = Column(DateTime, default=datetime.utcnow)
+
 class SavedSearch(Base):
     __tablename__ = "saved_searches"
     id = Column(String, primary_key=True)
