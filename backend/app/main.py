@@ -479,7 +479,7 @@ async def recompetes(request:Request):
     try:
         co=se.query(Company).filter(Company.id==u["company_id"]).first()
         if not co:raise HTTPException(404,"Company not found")
-        naics_list=[n.strip() for n in (co.naics_codes or "").replace(";",",").split(",") if n.strip()]
+        raw=co.naics if isinstance(co.naics,list) else [x.strip() for x in str(co.naics or "").replace(";",",").split(",")];naics_list=[str(n).strip() for n in (raw or []) if str(n).strip()]
         if not naics_list:return{"recompetes":[],"note":"Add NAICS codes to your company profile to see expiring contracts in your space."}
         naics_list=naics_list[:4]
         ck="recompete|"+"|".join(sorted(naics_list))
