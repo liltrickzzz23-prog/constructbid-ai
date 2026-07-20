@@ -473,6 +473,59 @@ async def competition(oid:str,request:Request):
             return{"competitors":[],"cached":False,"note":"Competitor lookup failed. Please try again later."}
     finally:se.close()
 
+@app.get("/api/recompetes")
+async def recompetes(request:Request):
+    u=gu(request);se=SessionLocal()
+    try:
+        co=se.query(Company).filter(Company.id==u["company_id"]).first()
+        if not co:raise HTTPException(404,"Company not found")
+        naics_list=[n.strip() for n in (co.naics_codes or "").replace(";",",").split(",") if n.strip()]
+        if not naics_list:return{"recompetes":[],"note":"Add NAICS codes to your company profile to see expiring contracts in your space."}
+        naics_list=naics_list[:4]
+        ck="recompete|"+"|".join(sorted(naics_list))
+        cached=se.query(EntityCache).filter(EntityCache.cache_key==ck).first()
+        if cached and cached.fetched_at and (datetime.utcnow()-cached.fetched_at).days<7:
+            return{"recompetes":cached.payload or [],"cached":True}
+        today=datetime.utcnow().date()
+        horizon=today+timedelta(days=365)
+        results=[]
+        try:
+            async with httpx.AsyncClient(timeout=25) as c:
+                for page in range(1,4):
+                    r=await c.post("https://api.usaspending.gov/api/v2/search/spending_by_award/",json={
+                        "filters":{"award_type_codes":["A","B","C","D"],"naics_codes":naics_list,
+                            "time_period":[{"start_date":(today-timedelta(days=1825)).isoformat(),"end_date":today.isoformat()}]},
+                        "fields":["Award ID","Recipient Name","Award Amount","Awarding Agency","Start Date","End Date","NAICS"],
+                        "sort":"Award Amount","order":"desc","limit":100,"page":page})
+                    if r.status_code!=200:break
+                    batch=r.json().get("results",[])
+                    if not batch:break
+                    results.extend(batch)
+                    if len(batch)<100:break
+        except Exception as ex:
+            print(f"[RECOMPETES] API error: {ex}")
+            return{"recompetes":[],"note":"Recompete data temporarily unavailable. Try again shortly."}
+        recs=[]
+        for a in results:
+            ed=a.get("End Date")
+            if not ed:continue
+            try:edd=datetime.strptime(ed,"%Y-%m-%d").date()
+            except:continue
+            if today<=edd<=horizon:
+                months=round((edd-today).days/30.4,1)
+                n=a.get("NAICS") or {}
+                recs.append({"award_id":a.get("Award ID",""),"incumbent":a.get("Recipient Name",""),
+                    "agency":a.get("Awarding Agency",""),"value":a.get("Award Amount",0),
+                    "end_date":ed,"months_out":months,"naics":n.get("code","") if isinstance(n,dict) else str(n)})
+        recs.sort(key=lambda x:x["end_date"])
+        recs=recs[:50]
+        import uuid as uu
+        if cached:cached.payload=recs;cached.fetched_at=datetime.utcnow()
+        else:se.add(EntityCache(id=uu.uuid4().hex[:12],cache_key=ck,payload=recs,fetched_at=datetime.utcnow()))
+        se.commit()
+        return{"recompetes":recs,"cached":False}
+    finally:se.close()
+
 # AI Chat
 @app.post("/api/ask-ai")
 async def ask_ai(req:AIChatReq,request:Request):
