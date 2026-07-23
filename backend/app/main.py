@@ -688,13 +688,25 @@ async def sam_refresh(req:SAMReq,request:Request):
     se=SessionLocal()
     try:
         old=se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).count()
-        se.query(Opportunity).filter(Opportunity.source=="sam.gov",Opportunity.company_id==u["company_id"]).delete()
+        # NON-DESTRUCTIVE: never delete existing opportunities. Dedupe on sam_notice_id
+        # (fallback: title+agency) so user statuses, notes and pins always survive a refresh.
+        existing=se.query(Opportunity).filter(Opportunity.company_id==u["company_id"]).all()
+        seen_ids={e.sam_notice_id for e in existing if e.sam_notice_id}
+        seen_keys={((e.title or "").strip().lower()+"|"+(e.agency or "").strip().lower()) for e in existing}
+        skipped=0
         for o in new:
+            nid=o.get("sam_notice_id")
+            key=(str(o.get("title","")).strip().lower()+"|"+str(o.get("agency","")).strip().lower())
+            if (nid and nid in seen_ids) or key in seen_keys:
+                skipped+=1;continue
             s=score(o,cd)
-            if s["score"]>=req.min_score:scored.append({**o,**s});se.add(Opportunity(**o));added+=1
+            if s["score"]>=req.min_score:
+                scored.append({**o,**s});se.add(Opportunity(**o));added+=1
+                if nid:seen_ids.add(nid)
+                seen_keys.add(key)
         se.commit()
     finally:se.close()
-    return{"cleared":old,"fetched":len(new),"added":added}
+    return{"cleared":0,"kept":old,"fetched":len(new),"added":added,"skipped":skipped}
 
 @app.post("/api/clear-expired")
 def clear_exp(request:Request):
