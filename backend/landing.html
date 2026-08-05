@@ -38,11 +38,6 @@
     "priceCurrency": "USD",
     "priceValidUntil": "2027-12-31",
     "availability": "https://schema.org/InStock"
-  },
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "ratingCount": "24"
   }
 }
 </script>
@@ -80,12 +75,12 @@ nav{position:fixed;top:0;width:100%;padding:16px 40px;display:flex;justify-conte
 .btn-cta{background:var(--accent);color:#06080d}.btn-cta:hover{background:#06b6d4;transform:translateY(-1px);box-shadow:0 8px 30px rgba(34,211,238,.25)}
 .btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}.btn-outline:hover{border-color:var(--accent)}
 .btn-large{padding:16px 36px;font-size:16px;border-radius:10px}
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative}
+.hero{min-height:auto;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:180px 24px 72px;position:relative}
 .hero::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:800px;height:800px;background:radial-gradient(circle,rgba(34,211,238,.08) 0%,rgba(59,130,246,.04) 40%,transparent 70%);pointer-events:none}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:13px;color:var(--dim);margin-bottom:32px;animation:fadeUp .8s ease}
 .hero-badge span{color:var(--green);font-weight:600}
 .hero h1{font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.05;letter-spacing:-2px;max-width:900px;margin-bottom:24px;animation:fadeUp .8s ease .1s both}
-.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero h1 em{font-style:normal;color:var(--accent)}
 .hero p{font-size:clamp(16px,2vw,20px);color:var(--dim);max-width:600px;line-height:1.6;margin-bottom:40px;animation:fadeUp .8s ease .2s both}
 .hero-ctas{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;animation:fadeUp .8s ease .3s both}
 .hero-stats{display:flex;gap:48px;margin-top:64px;animation:fadeUp .8s ease .4s both}
@@ -135,11 +130,9 @@ footer{border-top:1px solid var(--border);padding:40px 24px;text-align:center;fo
 </nav>
 
 <div class="hero">
-  <div class="hero-badge"><span>●</span> Built for SDVOSB, 8(a), HUBZone & Small Business contractors</div>
   <h1>Stop searching for contracts.<br><em>Let AI find them for you.</em></h1>
-  <p>ConstructBid AI scans SAM.gov every 6 hours, scores every opportunity against your exact capabilities, and generates proposal drafts in seconds.</p>
+  <p>ConstructBid AI scans SAM.gov every 6 hours and scores every opportunity against your NAICS codes, certifications, and region &mdash; so you spend your time on the bids you can actually win. Built for SDVOSB, 8(a), HUBZone, and small business contractors.</p>
   <div class="hero-ctas"><a href="/dashboard" class="btn btn-cta btn-large">Start Free 14-Day Trial →</a><a href="#how" class="btn btn-outline btn-large">See How It Works</a></div>
-  <div class="hero-stats"><div><div class="hero-stat-num">6hr</div><div class="hero-stat-label">Auto-refresh cycle</div></div><div><div class="hero-stat-num">100+</div><div class="hero-stat-label">NAICS codes</div></div><div><div class="hero-stat-num">60%</div><div class="hero-stat-label">Faster proposals</div></div></div>
 </div>
 
 <section style="padding:0 0 8px"><div class="container" style="max-width:760px">
